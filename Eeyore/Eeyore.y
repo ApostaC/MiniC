@@ -55,7 +55,7 @@ class FuncSymbol;
 %nonassoc LE '<' '>' GE EQ NE
 %left '+' '-'
 %left '*' '/' '%'
-%right UNIARY_OP
+%right MINUS INC DEC
 
 %%
 
@@ -204,7 +204,9 @@ expr        :   IDENTIFIER '=' expr
             |   expr '*' expr           { $$ = new BinaryExpr(Operator_Type::OMUL, $1, $3, currentTable); }
             |   expr '/' expr           { $$ = new BinaryExpr(Operator_Type::ODIV, $1, $3, currentTable); }
             |   expr '%' expr           { $$ = new BinaryExpr(Operator_Type::OMOD, $1, $3, currentTable); }
-            |   '-' expr %prec UNIARY_OP{ $$ = new UnaryExpr(Operator_Type::OSUB, $2, currentTable); }
+            |   '-' expr %prec MINUS    { $$ = new UnaryExpr(Operator_Type::OSUB, $2, currentTable); }
+            |   INC IDENTIFIER{ $$ = new UnaryExpr(Operator_Type::OINC, $2, currentTable); }
+            |   DEC IDENTIFIER{ $$ = new UnaryExpr(Operator_Type::ODEC, $2, currentTable); }
         /* NO UNARY OPERATORS HERE CURRENTLY
             |
             |
@@ -248,13 +250,13 @@ type        :   TOKINT              /* only provide int type currently */
 
 void yyerror(const char *s)
 {
-    printf("Line: %d -- %s\n", yylineno, s);
+    fprintf(stderr, "Line: %d -- %s\n", yylineno, s);
 }
 
 void yydebug(const char *s)
 {
     if(debug)
-        printf("(DEBUG) Line: %d -- %s\n", yylineno, s);
+        fprintf(stderr, "(DEBUG) Line: %d -- %s\n", yylineno, s);
 }
 
 void EmitError(const std::string &s)
@@ -266,7 +268,7 @@ void EmitError(const std::string &s)
 void EmitWarning(const std::string &s, int lineno)
 {
     if(!lineno) lineno = yylineno;
-    printf("Line: %d -- " BOLD_KYEL "Warning: " KNRM "%s\n", lineno, s.c_str());
+    fprintf(stderr, "Line: %d -- " BOLD_KYEL "Warning: " KNRM "%s\n", lineno, s.c_str());
 }
 
 void Emit(FILE *f, const std::string &s)

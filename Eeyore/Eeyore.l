@@ -29,6 +29,8 @@ NUM [1-9][0-9]*|0
 \!\= 			{return NE;}
 \|\| 			{return OR;}
 \&\& 			{return AND;}
+\+\+ 			{return INC;}
+\-\- 			{return DEC;}
 
  /* Reserved Words */
 int                     {yylval.type = Expr_Type::INT_TYPE; return TOKINT;}
