@@ -27,7 +27,8 @@ class Symbol
         int getlineno(){return lineno;}
         Expr_Type getExprType(){return etype;}
         virtual std::string getIdentifier(){return ident;}
-        virtual std::string gencode() = 0;
+        virtual std::string gencode() = 0; // return the symbol name in ASM
+        virtual std::string gendecl() = 0; // return the symbol's decl in ASM
         virtual void print(std::ostream &o);
 };
 
@@ -42,6 +43,7 @@ class FuncSymbol : public Symbol
         size_t getParamNum();
         std::vector<Expr_Type> *getParamType();
         virtual std::string gencode() override;
+        virtual std::string gendecl() override;
         virtual void print(std::ostream & o) override;
         virtual ~FuncSymbol() = default;
 };
@@ -58,17 +60,22 @@ class VarSymbol : public Symbol
                 int _i, Code_Type ct, bool isG);
         bool isGlobal();
         virtual std::string gencode() override;
+        virtual std::string gendecl() override;
         virtual void print(std::ostream & o) override;
         virtual ~VarSymbol() = default;
 };
 
 class ArraySymbol : public VarSymbol
 {
+    private:
+        size_t UNDEFINED = -1ull;
     protected:
         size_t len;
     public:
+        ArraySymbol(const std::string &, Expr_Type ,
+                int _i, Code_Type ct, bool isG, size_t len);
         size_t getLength()const{return len;}
-        virtual std::string gencode() override;
+        virtual std::string gendecl() override;
         virtual void print(std::ostream &o) override;
 };
 
@@ -85,6 +92,7 @@ class SymbolTable
         FuncSymbol *getFunctionSymbol(const std::string &ident);
         VarSymbol *getVariableSymbol(const std::string &ident);
         ArraySymbol *getArraySymbol(const std::string &ident);
+        Symbol *getSymbol(const std::string &ident); /* get symbol only with existance check */
 
         /* return false if there is duplicates in this scope */
         bool insertFunctionSymbol(const std::string &ident, Expr_Type et,
@@ -94,6 +102,7 @@ class SymbolTable
         bool insertArraySymbol(const std::string &ident, Expr_Type et,
                 Code_Type ct, size_t len);
         
+        VarSymbol *generateNextTempVar(Expr_Type et);
         SymbolTable *getParent();
         void print(std::ostream &o);
         virtual ~SymbolTable();

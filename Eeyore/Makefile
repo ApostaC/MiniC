@@ -2,10 +2,10 @@
 OBJ = Symbols.o Express.o Statement.o
 
 eeyore: ${OBJ} Eeyore.tab.cpp lex.yy.cpp common.h Eeyore.cpp
-	g++ $^ -o $@ -lfl -std=c++14
+	g++ $^ -o $@ -lfl -std=c++14 -g
 
 %.o: %.cpp %.h
-	g++ -c $^ -std=c++14
+	g++ -c $^ -std=c++14 -g
 
 Eeyore.tab.cpp: Eeyore.y
 	bison -d Eeyore.y -o Eeyore.tab.cpp

@@ -1,5 +1,6 @@
 Progress:
-    expr
+    Symbol::gendecl()
 
 Opt:
     SymbolTable::getSymbol<T>(name, wronghint)
+    type check and conversion system for multi-type support

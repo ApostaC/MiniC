@@ -20,6 +20,13 @@ size_t FuncSymbol::getParamNum()
     return this->args->size();
 }
 
+std::string FuncSymbol::gendecl()
+{
+    std::string ret{this->gencode()};
+    ret += " [" + std::to_string(this->getParamNum()) + "]";
+    return ret;
+}
+
 /* ------------------- VarSymbol ------------------*/
 VarSymbol::VarSymbol(const std::string &n, Expr_Type t,
         int _i, 
@@ -37,6 +44,29 @@ std::string VarSymbol::gencode()
     ret += this->ctype;
     ret.append(std::to_string(id));
     return ret;
+}
+
+std::string VarSymbol::gendecl()
+{
+    std::string ret{"var "};
+    return ret + this->gencode();
+}
+
+/* ------------------- ArraySymbol ------------------*/
+ArraySymbol::ArraySymbol(const std::string &n, Expr_Type t,
+        int _i, Code_Type ct, bool isG, size_t l)
+    : VarSymbol(n, t, _i, ct, isG), len(l)
+{
+}
+
+std::string ArraySymbol::gendecl()
+{
+    std::string ret{"var "};
+    if(this->len != ArraySymbol::UNDEFINED)
+        ret += std::to_string(this->len * 4) + " ";
+    else
+        EmitError("Unknown Err: ArraySymbol.UndefinedLength");
+    return ret + this->gencode();
 }
 
 /* ------------------- SymbolTable ------------------*/
@@ -102,7 +132,7 @@ VarSymbol *SymbolTable::getVariableSymbol(const std::string &ident)
     }
     else if(parent)
     {
-        sym = parent->getFunctionSymbol(ident);
+        sym = parent->getVariableSymbol(ident);
         /* if error occurs in parent, it will return NULL 
          * and the error will NOT be missed
          * so don't print error here
@@ -171,6 +201,17 @@ bool SymbolTable::insertVariableSymbol(const std::string &ident, Expr_Type et,
             new VarSymbol(ident, et, id, ct, isglb)}).second;
 }
 
+bool SymbolTable::insertArraySymbol(const std::string &ident, Expr_Type et,
+        Code_Type ct, size_t len)
+{
+    if(symbols.count(ident))
+        errorFoundDup(symbols[ident]);
+    bool isglb = this->depth == 1;
+    int id = this->counter.nextID(ct);
+    return symbols.insert({ident,
+            new ArraySymbol(ident, et, id, ct, isglb, len)}).second;
+}
+
 SymbolTable::~SymbolTable()
 {
     for(auto ent : symbols)
@@ -218,6 +259,15 @@ SymbolTable *SymbolTable::getParent()
 {
     return this->parent;
 }
+
+VarSymbol *SymbolTable::generateNextTempVar(Expr_Type et)
+{
+    int id = counter.nextID(Code_Type::t);
+    std::string name = "__tempvar_t" + std::to_string(id);
+    VarSymbol *ret = new VarSymbol(name, et, id, Code_Type::t, false);
+    return ret;
+}
+
 /* ------------------- SymbolCounter ------------------*/
 int SymbolCounter::nextID(Code_Type ct)
 {

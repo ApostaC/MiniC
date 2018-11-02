@@ -2,3 +2,5 @@
 *.o
 *.gch
 *trybuild*
+*test*
+eeyore

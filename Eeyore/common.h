@@ -17,7 +17,7 @@ class Stmt;
 class SymbolTable;
 class SymbolCounter;
 
-enum Expr_Type { BOOL_TYPE='B', INT_TYPE='I', ARRAY_TYPE='A', VOID_TYPE='V', GARBAGE_TYPE='G'};
+enum Expr_Type { BOOL_TYPE=1, INT_TYPE=4, VOID_TYPE=0, GARBAGE_TYPE=-1};
 enum Code_Type { T = 'T', t = 't', p = 'p'};
 
 extern int yylineno;
@@ -30,6 +30,8 @@ int yyparse(void);
 void yyerror(const char* msg);
 void yydebug(const char* msg);
 void EmitError(const std::string &msg);
+void EmitWarning(const std::string &msg, int lineno = 0);
+void Emit(FILE *, const std::string &);
 extern int currentLabel;
 extern SymbolTable* currentSymbolTable;
 extern Expr_Type currentReturnType;

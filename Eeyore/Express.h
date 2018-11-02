@@ -18,13 +18,10 @@ class ArrayExpr;
 
 enum Operator_Type {
         OADD, OSUB, OMUL, ODIV, OMOD, 
-        OGT, OLT, OEQ, ONE, OGE, OLE 
+        OGT, OLT, OEQ, ONE, OGE, OLE,
+        OAND, OOR
 };
 
-std::map<Operator_Type, std::string> type2str {
-    {OADD, "+"}, {OSUB, "-"}, {OMUL, "*"}, {ODIV, "/"}, {OMOD, "%"},
-    {OGT, ">"}, {OLT, "<"}, {OEQ, "=="}, {ONE, "!="}, {OGE, ">="}, {OLE, "<="}
-};
 
 class Expr
 {
@@ -36,7 +33,11 @@ class Expr
     public:
         Expr(Expr_Type et, SymbolTable *st) : etype(et), table(st) { lineno = yylineno;}
         Expr_Type getType() const {return etype;}
-        virtual void gencode(FILE *f) const = 0;// now debugging for stmt
+
+        /* Gencode: output something to the file and return the name of the 
+         * temporary variable of this expression */
+        virtual std::string gencode(FILE *f) const = 0;
+
         virtual ~Expr() = default;
 };
 
@@ -47,7 +48,7 @@ class UnaryExpr : public Expr
         Expr *right;
     public:
         UnaryExpr(Operator_Type oper, Expr *expr, SymbolTable *st);
-        virtual void gencode(FILE *f) const;
+        virtual std::string gencode(FILE *f) const;
 };
 
 class BinaryExpr : public Expr
@@ -57,7 +58,7 @@ class BinaryExpr : public Expr
         Expr *left, *right;
     public:
         BinaryExpr(Operator_Type ope, Expr *l, Expr *r, SymbolTable *st);
-        virtual void gencode(FILE *f)const;
+        virtual std::string gencode(FILE *f)const;
 };
 
 class AssignExpr : public Expr
@@ -66,8 +67,9 @@ class AssignExpr : public Expr
         AssignAbleExpr *left;
         Expr *right;
     public:
+        AssignExpr(const std::string &id, Expr *, SymbolTable*);
         AssignExpr(Expr *l, Expr *r, SymbolTable *st);
-        virtual void gencode(FILE *f) const;
+        virtual std::string gencode(FILE *f) const;
 };
 
 class LiteralExpr : public Expr
@@ -75,8 +77,9 @@ class LiteralExpr : public Expr
     protected:
         int value;
     public:
+        int getValue()const {return this->value;}
         LiteralExpr(Expr_Type et, int value, SymbolTable *table);
-        virtual void gencode(FILE *f) const;
+        virtual std::string gencode(FILE *f) const;
 };
 
 
@@ -87,19 +90,37 @@ class FuncExpr : public Expr
         std::vector<Expr *> *params;
     public:
         FuncExpr(FuncSymbol *, std::vector<Expr *>*, SymbolTable *);
+        virtual std::string gencode(FILE *f) const;
 };
 
 class AssignAbleExpr : public Expr
 {
     /* This class does not contain anything */
     /* It's only for mark an Expr assignable*/
+    public:
+        AssignAbleExpr(Expr_Type et, SymbolTable *t) : Expr(et, t){}
 };
 
 class IdentExpr : public AssignAbleExpr
 {
+    protected:
+        VarSymbol *var;
+    public:
+        IdentExpr(VarSymbol *, SymbolTable *);
+        virtual std::string gencode(FILE *f) const;
 };
+
 class ArrayExpr : public AssignAbleExpr
 {
+    protected:
+        ArraySymbol *arr;
+        Expr *offset;
+        bool _isLeft;    /* different position have different action */
+    public:
+        ArrayExpr(ArraySymbol *, Expr *offset, SymbolTable *);
+        void setPosition(bool isl){_isLeft = isl;}
+        bool isLeft(){return _isLeft;}
+        virtual std::string gencode(FILE *f) const;
 };
 
 

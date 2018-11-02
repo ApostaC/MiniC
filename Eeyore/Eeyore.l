@@ -12,20 +12,15 @@ void ignoreComments();
 
 DIGIT [0-9]
 CHARA [A-Za-z]
-NUM -?[1-9][0-9]*|0
+NUM [1-9][0-9]*|0
 
 %s COMMENT
 
 %%
 
- /* Comments */
-\/\/ {BEGIN COMMENT; printf("Enter Comment State\n");}
-<COMMENT>. {}
-<COMMENT>\n {BEGIN 0; printf("COMMENT end\n");}
-"/*"			{ignoreComments(); } /* slash star style comments  */
 
  /* Single Char Tokens */
-[\(\)\{\}\;\,\+\-\*\/\%\<\>\=\!] 	{return yytext[0];}
+[\(\)\{\}\;\,\+\-\*\/\%\<\>\=\!\[\]] 	{return yytext[0];}
 
  /* Double Char Tokens */
 \<\= 			{return LE;}
@@ -57,6 +52,11 @@ false                   {yylval.i = 0; return BOOL_LITERAL;}
 [ \t\r]+                {;} 
 [\n]			{yylineno++;}
 
+ /* Comments */
+ /*"/*"			{ignoreComments(); }  slash star style comments  */
+\/\/.*                  {;}           		/* slash slash style comments */
+
+ /* Other */
 .               {char buf[100] = "Unrecognized Token:     "; buf[20] = yytext[0]; yyerror(buf);}
 
 
@@ -69,9 +69,11 @@ void ignoreComments()
     while(1)
     {
         while((c = getchar()) != '*' && c!=EOF);
+        fprintf(stderr,"Got c = %c\n", c);
         if(c == '*')
         {
             while((c = getchar()) == '*');
+            fprintf(stderr,"Got c = %c\n", c);
             if(c == '/') break;
         }
         if(c == EOF)

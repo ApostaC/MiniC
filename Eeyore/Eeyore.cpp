@@ -1,6 +1,7 @@
 #include <iostream>
 #include "common.h"
 #include "Symbols.h"
+#include "Statement.h"
 
 extern int yyparse();
 extern SymbolCounter global_counter;
@@ -11,16 +12,19 @@ std::vector<SymbolTable*> tables = {currentTable};
 void NewScope();
 void EndScope();
 void CleanUp();
+void Generate(FILE *f, std::vector<Stmt*> *list);
 
+int debug;
 int main(int argc, char *argv[])
 {
-    std::cout<<"Hello from eeyore"<<std::endl;
-    yyparse();
+    debug = 0;
+    auto ret = yyparse();
+    //printf("ret = %d\n", ret);
 
-    for(auto table : tables)
-        table->print(std::cout);
-    global_counter.print(std::cout);
-    CleanUp();
+    //for(auto table : tables)
+    //    table->print(std::cout);
+    //global_counter.print(std::cout);
+    //CleanUp();
 }
 
 void NewScope()
@@ -44,4 +48,11 @@ void CleanUp()
 {
     for(auto table : tables)
         delete table;
+}
+
+void Generate(FILE *f, std::vector<Stmt*> *list)
+{
+    for(auto stmt : *list)
+        stmt->gencode(f);
+    //Some clean Up?
 }

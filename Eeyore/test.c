@@ -1,29 +1,21 @@
-int AA;
-int qq = 1;
-int a = 4;
-int function(
-        int aa,
-        int bb,
-        int cc
-        )
-{
-    {
-        int aa;
-    }
-    int d;
-    int e;
-    int f;
-    return 
-        1;
-}
-
+int getint();
+int putint(int x);
+int n;
+int a[10] ;//= { 1,2,3,4,5};
 int main()
 {
-    int function(int aa, int bb, int cc);
-    int foo(int v);
-    int a;
-    int b;
-    int d = 3;
-    return 
-        0;
+    n = getint(); 
+    if(n>10)
+        return 1;
+    int s;
+    int i = 0;
+    s = i;
+    while( i < n)
+    {
+        a[i] = getint();
+        s = s + a[i];
+        i = i + 1;
+    }
+    putint(s);
+    return 0;
 }
