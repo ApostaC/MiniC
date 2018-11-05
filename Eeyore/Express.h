@@ -31,7 +31,7 @@ class Expr
         Expr_Type etype;
         SymbolTable *table;
         //std::string name;
-    protected:
+    public:
         bool isVoid(){return etype == Expr_Type::VOID_TYPE;}
         bool isBool(){return etype == Expr_Type::BOOL_TYPE;}
         bool isInt(){return etype == Expr_Type::INT_TYPE;}

@@ -53,13 +53,19 @@ SelfExpr::SelfExpr(Operator_Type op, const std::string &id, SymbolTable *table)
 AssignExpr::AssignExpr(Expr *l, Expr *r, SymbolTable *table)
     : Expr(l->getType(), table), right(r)
 {
-    /* TODO: typecheck */
+    /* TYPE CHECK */
+    if(r->isVoid())
+        EmitError("Cannot assign a void value to others");
+    if(l->isBool() && r->isInt())
+        EmitWarning("Type conversion with narrowing: int -> bool");
+
     if(INSTANCE_OF(l, AssignAbleExpr))
         left = dynamic_cast<AssignAbleExpr*>(l);
     else
         EmitError("Left Value is not assignable!");
+
     if(INSTANCE_OF(l, ArrayExpr))
-        dynamic_cast<ArrayExpr*>(l)->setPosition(true);
+        dynamic_cast<ArrayExpr*>(l)->setPosition(true); // array on left
 }
 
 AssignExpr::AssignExpr(const std::string &name, Expr *r, SymbolTable *t)
@@ -67,8 +73,8 @@ AssignExpr::AssignExpr(const std::string &name, Expr *r, SymbolTable *t)
 {
     /* TODO: typecheck! */
 
-    if(INSTANCE_OF(r, FuncSymbol))
-        EmitError("Cannot assign function to other var");
+//    if(INSTANCE_OF(r, FuncSymbol))
+//        EmitError("Cannot assign function to other var");
 
     auto sym = t->getVariableSymbol(name);
     if(INSTANCE_OF(sym, ArraySymbol))
@@ -84,7 +90,7 @@ AssignExpr::AssignExpr(const std::string &name, Expr *r, SymbolTable *t)
         else this->left = new IdentExpr(sym, t);
     }
     else
-        EmitError("Left symbol is not assignable!");
+        EmitError("Left Value is not assignable!");
 }
 
 
@@ -92,17 +98,19 @@ AssignExpr::AssignExpr(const std::string &name, Expr *r, SymbolTable *t)
 LiteralExpr::LiteralExpr(Expr_Type et, int val, SymbolTable *table)
     : Expr(et, table), value(val)
 {
-    /*TODO: type check? when adding floating type*/
+    if(et == Expr_Type::BOOL_TYPE && value)
+        value = 1;      /* change truthy value to 1 */
 }
 
 
-/* --------------------- LiteralExpr ----------------- */
+/* --------------------- FuncExpr ----------------- */
 FuncExpr::FuncExpr(FuncSymbol *f, std::vector<Expr*> *ps, SymbolTable *t)
     : Expr(f->getExprType(), t), func(f), params(ps)
 {
     if(ps->size() != f->getParamNum()) 
         EmitError("No Matching function call to " + f->getIdentifier() 
                 + ": Unmatched parameter count!");
+
     auto expectType = f->getParamType();
     for(size_t i = 0; i < ps->size(); ++i)
     {
@@ -113,14 +121,14 @@ FuncExpr::FuncExpr(FuncSymbol *f, std::vector<Expr*> *ps, SymbolTable *t)
     }
 }
 
-/* --------------------- LiteralExpr ----------------- */
+/* --------------------- IdentExpr ----------------- */
 IdentExpr::IdentExpr(VarSymbol *v, SymbolTable *t)
     : AssignAbleExpr(v->getExprType(), t), var(v)
 {
 }
 
 
-/* --------------------- LiteralExpr ----------------- */
+/* --------------------- ArrayExpr ----------------- */
 ArrayExpr::ArrayExpr(ArraySymbol *a, Expr *off, SymbolTable *t)
     : AssignAbleExpr(a->getExprType(), t), arr(a), offset(off), _isLeft(false)
 {

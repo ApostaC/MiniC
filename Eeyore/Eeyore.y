@@ -241,9 +241,15 @@ if_stmt     :   IF '(' expr ')' stmt %prec NO_ELSE
 
 literal     :   INT_LITERAL         /* only provide int literals currently */
                 { $$ = new LiteralExpr(Expr_Type::INT_TYPE, $1, currentTable);}
+            |   BOOL_LITERAL
+                { $$ = new LiteralExpr(Expr_Type::BOOL_TYPE, $1, currentTable);}
             ;
 
 type        :   TOKINT              /* only provide int type currently */
+                { $$ = $1; }
+            |   TOKBOOL
+                { $$ = $1; }
+            |   TOKVOID
                 { $$ = $1; }
 
 %%
