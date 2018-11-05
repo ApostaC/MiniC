@@ -30,9 +30,10 @@ extern LabelCounter _lcnter;
 class Stmt
 {
     protected:
+        Expr_Type etype;
         LabelCounter &lbcnt;
     public:
-        Stmt() : lbcnt(_lcnter) {}
+        Stmt() : lbcnt(_lcnter) {etype = Expr_Type::GARBAGE_TYPE;}
         virtual void gencode(FILE *f) const = 0;
         virtual ~Stmt() = default;
 };
@@ -83,7 +84,7 @@ class ReturnStmt : public Stmt
         Expr *ret;
     public:
         /* if ret = NULL --> return (void) */
-        ReturnStmt(Expr *e = NULL) : ret(e) {}
+        ReturnStmt(Expr *e = NULL) : ret(e){if(e) etype = e->getType();}
         virtual void gencode(FILE *f) const override;
 };
 

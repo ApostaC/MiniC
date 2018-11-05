@@ -7,6 +7,15 @@
 
 LabelCounter _lcnter{"l", 0};
 
+static void modify_etype(Expr_Type &in, Expr_Type newt)
+{
+    if(newt == Expr_Type::INT_TYPE)
+        in = newt;
+
+    if(newt == Expr_Type::BOOL_TYPE || newt == Expr_Type::VOID_TYPE)
+        if(in == Expr_Type::GARBAGE_TYPE)
+            in = newt;
+}
 
 /* ----------------------- compile time check --------------------- */
 

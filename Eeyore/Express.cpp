@@ -6,7 +6,9 @@ std::map<Operator_Type, std::string> type2str {
     {OAND, "&&"}, {OOR, "||"}, {OINC, "+"}, {ODEC, "-"}, {ONOT, "!"}
 };
 
-
+std::map<Expr_Type, int> type2len{
+    {INT_TYPE, 4}, {BOOL_TYPE, 2}, {VOID_TYPE, 0}
+};
 /* --------------------- UnaryExpr ----------------- */
 UnaryExpr::UnaryExpr(Operator_Type op, Expr *expr, SymbolTable *table)
     : Expr(expr->getType(), table),  oper(op), right(expr)
@@ -243,7 +245,7 @@ std::string ArrayExpr::gencode(FILE *f) const
     /* emit the offset expression first */
     /* offname will be like 't32' for expression and '15' for literal 15 */
     /* generate a simple binary expr to cal and store the offset value */
-    LiteralExpr lit(Expr_Type::INT_TYPE, (int)this->getType(), this->table);
+    LiteralExpr lit(Expr_Type::INT_TYPE, type2len[this->getType()], this->table);
     BinaryExpr be(Operator_Type::OMUL, &lit, this->offset, this->table);
 
     auto offname = be.gencode(f);//ae.gencode(f);//offset->gencode(f);    

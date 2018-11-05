@@ -61,6 +61,8 @@ ArraySymbol::ArraySymbol(const std::string &n, Expr_Type t,
         int _i, Code_Type ct, bool isG, size_t l)
     : VarSymbol(n, t, _i, ct, isG), len(l)
 {
+    if(t == Expr_Type::VOID_TYPE)
+        EmitError("Unsupported array type: " BOLD_KRED "void" KNRM);
 }
 
 std::string ArraySymbol::gendecl()
