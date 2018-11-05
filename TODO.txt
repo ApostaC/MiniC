@@ -1,6 +1,13 @@
-Progress:
-    Symbol::gendecl()
-
 Opt:
     SymbolTable::getSymbol<T>(name, wronghint)
     type check and conversion system for multi-type support
+    Function Return value check
+
+
+
+Features:
+    void and bool
+    self operator
+    type check
+    array literal
+    var definition with expr

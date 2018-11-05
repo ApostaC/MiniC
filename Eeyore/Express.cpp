@@ -6,6 +6,7 @@ std::map<Operator_Type, std::string> type2str {
     {OAND, "&&"}, {OOR, "||"}, {OINC, "+"}, {ODEC, "-"}, {ONOT, "!"}
 };
 
+
 /* --------------------- UnaryExpr ----------------- */
 UnaryExpr::UnaryExpr(Operator_Type op, Expr *expr, SymbolTable *table)
     : Expr(expr->getType(), table),  oper(op), right(expr)
@@ -17,14 +18,22 @@ UnaryExpr::UnaryExpr(Operator_Type op, Expr *expr, SymbolTable *table)
 BinaryExpr::BinaryExpr(Operator_Type ope, Expr *l, Expr *r, SymbolTable *table)
     : Expr(l->getType(), table), oper(ope), left(l), right(r)
 {
-    /*TODO: type check*/
+    if(l->getType() == Expr_Type::VOID_TYPE 
+            || r->getType() == Expr_Type::VOID_TYPE)
+        EmitError("Expression argument with void type found!");
+    if(l->getType() == Expr_Type::INT_TYPE 
+            || r->getType() == Expr_Type::INT_TYPE)
+        this->etype = Expr_Type::INT_TYPE;
 }
 
 /* --------------------- SelfExpr ----------------- */
 SelfExpr::SelfExpr(Operator_Type op, VarSymbol *var, SymbolTable *table)
     : Expr(var->getExprType(), table), oper(op), sym(var)
 {
-    /* TODO: typecheck!*/
+    if(!isInt())
+        EmitError("Self operator can only used on int variables");
+    if(INSTANCE_OF(var, ArraySymbol))
+        EmitError("Cannot use " + type2str[op] + " on array");
     switch(op)
     {
         case OINC:
@@ -36,13 +45,8 @@ SelfExpr::SelfExpr(Operator_Type op, VarSymbol *var, SymbolTable *table)
 }
 
 SelfExpr::SelfExpr(Operator_Type op, const std::string &id, SymbolTable *table)
-    : Expr(table->getVariableSymbol(id)->getExprType(), table), oper(op)
+    : SelfExpr(op, table->getVariableSymbol(id), table)
 {
-    /* TODO: typecheck! */
-    VarSymbol *s = table->getVariableSymbol(id);
-    if(INSTANCE_OF(s, ArraySymbol))
-        EmitError("Cannot use " + type2str[op] + " on array");
-    sym = s; 
 }
 
 /* --------------------- AssignExpr ----------------- */

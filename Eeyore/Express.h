@@ -31,6 +31,10 @@ class Expr
         Expr_Type etype;
         SymbolTable *table;
         //std::string name;
+    protected:
+        bool isVoid(){return etype == Expr_Type::VOID_TYPE;}
+        bool isBool(){return etype == Expr_Type::BOOL_TYPE;}
+        bool isInt(){return etype == Expr_Type::INT_TYPE;}
     public:
         Expr(Expr_Type et, SymbolTable *st) : etype(et), table(st) { lineno = yylineno;}
         Expr_Type getType() const {return etype;}

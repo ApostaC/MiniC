@@ -34,7 +34,11 @@ VarSymbol::VarSymbol(const std::string &n, Expr_Type t,
         bool isG)
     : Symbol(n, t), id(_i), 
     ctype(ct), 
-    _isGlobal(isG) {}
+    _isGlobal(isG) 
+{
+    if(t==Expr_Type::VOID_TYPE)
+        EmitError("Unsupported variable type: " BOLD_KRED "void" KNRM);
+}
 
 bool VarSymbol::isGlobal() { return this->_isGlobal; }
 
