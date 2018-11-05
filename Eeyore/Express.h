@@ -11,6 +11,7 @@ class BinaryExpr;
 class AssignExpr;
 class LiteralExpr;
 class FuncExpr;
+class SelfExpr; /* ++i or --i */
 
 class AssignAbleExpr;
 class IdentExpr;
@@ -18,8 +19,8 @@ class ArrayExpr;
 
 enum Operator_Type {
         OADD, OSUB, OMUL, ODIV, OMOD, 
-        OGT, OLT, OEQ, ONE, OGE, OLE,
-        OAND, OOR
+        OGT, OLT, OEQ, ONE, OGE, OLE, 
+        OAND, OOR, OINC, ODEC, ONOT
 };
 
 
@@ -90,6 +91,17 @@ class FuncExpr : public Expr
         std::vector<Expr *> *params;
     public:
         FuncExpr(FuncSymbol *, std::vector<Expr *>*, SymbolTable *);
+        virtual std::string gencode(FILE *f) const;
+};
+
+class SelfExpr : public Expr
+{
+    protected:
+        Operator_Type oper; /* OINC or ODEC */
+        VarSymbol *sym;
+    public:
+        SelfExpr(Operator_Type op, VarSymbol *var, SymbolTable *);
+        SelfExpr(Operator_Type op, const std::string &, SymbolTable *);
         virtual std::string gencode(FILE *f) const;
 };
 

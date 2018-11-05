@@ -3,7 +3,7 @@
 std::map<Operator_Type, std::string> type2str {
     {OADD, "+"}, {OSUB, "-"}, {OMUL, "*"}, {ODIV, "/"}, {OMOD, "%"},
     {OGT, ">"}, {OLT, "<"}, {OEQ, "=="}, {ONE, "!="}, {OGE, ">="}, {OLE, "<="},
-    {OAND, "&&"}, {OOR, "||"}
+    {OAND, "&&"}, {OOR, "||"}, {OINC, "+"}, {ODEC, "-"}, {ONOT, "!"}
 };
 
 /* --------------------- UnaryExpr ----------------- */
@@ -18,6 +18,31 @@ BinaryExpr::BinaryExpr(Operator_Type ope, Expr *l, Expr *r, SymbolTable *table)
     : Expr(l->getType(), table), oper(ope), left(l), right(r)
 {
     /*TODO: type check*/
+}
+
+/* --------------------- SelfExpr ----------------- */
+SelfExpr::SelfExpr(Operator_Type op, VarSymbol *var, SymbolTable *table)
+    : Expr(var->getExprType(), table), oper(op), sym(var)
+{
+    /* TODO: typecheck!*/
+    switch(op)
+    {
+        case OINC:
+        case ODEC:
+            break;
+        default:
+            EmitError("Invalid usage of an operator, only ++ or -- is permitted");
+    }
+}
+
+SelfExpr::SelfExpr(Operator_Type op, const std::string &id, SymbolTable *table)
+    : Expr(table->getVariableSymbol(id)->getExprType(), table), oper(op)
+{
+    /* TODO: typecheck! */
+    VarSymbol *s = table->getVariableSymbol(id);
+    if(INSTANCE_OF(s, ArraySymbol))
+        EmitError("Cannot use " + type2str[op] + " on array");
+    sym = s; 
 }
 
 /* --------------------- AssignExpr ----------------- */
@@ -179,6 +204,13 @@ std::string FuncExpr::gencode(FILE *f) const
     delete tempSym;
     return ret;
     //TODO
+}
+
+std::string SelfExpr::gencode(FILE *f) const
+{
+    std::string ret = this->sym->gencode();
+    Emit(f, ret + " = " + ret + " " + type2str[oper] + " 1\n");
+    return ret;
 }
 
 std::string IdentExpr::gencode(FILE *f) const

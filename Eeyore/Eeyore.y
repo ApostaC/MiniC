@@ -55,7 +55,7 @@ class FuncSymbol;
 %nonassoc LE '<' '>' GE EQ NE
 %left '+' '-'
 %left '*' '/' '%'
-%right MINUS INC DEC
+%right MINUS INC DEC NOT
 
 %%
 
@@ -164,7 +164,7 @@ function_stmt:  '{' stmt_list '}'       { $$ = new FuncBodyStmt($2);}
 
 compound_stmt:  '{'                     { NewScope(); yydebug("new scope established! (compound)"); }
                 stmt_list '}'
-                { /*TODO: stmt here*/ 
+                { 
                     EndScope(); yydebug("Scope escaped! (compound)");
                     $$ = new CompoundStmt($3);
                 }
@@ -187,7 +187,6 @@ return_stmt :   RETURN expr ';'         { $$ = new ReturnStmt($2); }
 
 expr        :   IDENTIFIER '=' expr 
                 {
-                    /*TODO: deal with initialize params for ALL of Expr object*/
                     $$ = new AssignExpr($1, $3, currentTable);
                 }
             |   array_expr '=' expr     { $$ = new AssignExpr($1, $3, currentTable); }
@@ -205,8 +204,9 @@ expr        :   IDENTIFIER '=' expr
             |   expr '/' expr           { $$ = new BinaryExpr(Operator_Type::ODIV, $1, $3, currentTable); }
             |   expr '%' expr           { $$ = new BinaryExpr(Operator_Type::OMOD, $1, $3, currentTable); }
             |   '-' expr %prec MINUS    { $$ = new UnaryExpr(Operator_Type::OSUB, $2, currentTable); }
-            |   INC IDENTIFIER{ $$ = new UnaryExpr(Operator_Type::OINC, $2, currentTable); }
-            |   DEC IDENTIFIER{ $$ = new UnaryExpr(Operator_Type::ODEC, $2, currentTable); }
+            |   '!' expr %prec NOT      { $$ = new UnaryExpr(Operator_Type::ONOT, $2, currentTable); }
+            |   INC IDENTIFIER          { $$ = new SelfExpr(Operator_Type::OINC, $2, currentTable); }
+            |   DEC IDENTIFIER          { $$ = new SelfExpr(Operator_Type::ODEC, $2, currentTable); }
         /* NO UNARY OPERATORS HERE CURRENTLY
             |
             |
