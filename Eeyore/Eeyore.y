@@ -180,9 +180,8 @@ while_stmt  :   WHILE '(' expr ')' stmt { $$ = new WhileStmt($3, $5);}
             ;
 
 return_stmt :   RETURN expr ';'         { $$ = new ReturnStmt($2); }
-            /*  disable empty return stmt 
-            |   RETURN ';'
-        */
+            |   RETURN ';'              { $$ = new ReturnStmt(); }
+        
             ;
 
 expr        :   IDENTIFIER '=' expr 
@@ -256,7 +255,7 @@ type        :   TOKINT              /* only provide int type currently */
 
 void yyerror(const char *s)
 {
-    fprintf(stderr, "Line: %d -- %s\n", yylineno, s);
+    fprintf(stderr, "Line: %d -- " BOLD_KRED "Error: " KNRM "%s\n", yylineno, s);
 }
 
 void yydebug(const char *s)
