@@ -31,6 +31,61 @@ ArrdefnStmt::ArrdefnStmt(ArraySymbol *a, std::vector<Expr*> *i, SymbolTable *t)
                 std::to_string(arr->getLength()) + " But got " + std::to_string(init->size()));
 }
 
+/* ------------------------- return check --------------------------*/
+
+bool IfStmt::retCheck(Expr_Type ext)
+{
+    /* always true or always false ? */
+    bool ret = true;
+    std::vector<Stmt*> check;
+    if(INSTANCE_OF(cnd, LiteralExpr))
+    {
+        int val = dynamic_cast<LiteralExpr*>(cnd)->getValue();
+        if(val) // always true
+            check.push_back(thenStmt);
+        else check.push_back(elseStmt);
+    }
+    else    // cannot judge
+    {
+        check.push_back(thenStmt);
+        check.push_back(elseStmt);
+    }
+    for(auto s : check)
+        if(s) ret = ret & s->retCheck(ext);
+    return ret;
+}
+
+bool WhileStmt::retCheck(Expr_Type ext)
+{
+    /* always true ? */
+    /* Simply only do type check for loop body 
+     * return true if cnd is always true
+     * else return false
+     */
+    body->retCheck(ext);    //for body
+    if(INSTANCE_OF(cnd, LiteralExpr))
+    {
+        int val = dynamic_cast<LiteralExpr*>(cnd)->getValue();
+        if(val) return true;// always true
+    }
+    return false;
+}
+
+bool ReturnStmt::retCheck(Expr_Type ext)
+{
+    Expr_Type e;// = ret->getType();
+    if(ret) e = ret->getType();
+    else e = VOID_TYPE;
+    if(ext == VOID_TYPE && e != VOID_TYPE)
+    {
+        EmitWarning("Return with a value, in function returning void");
+        return false;
+    }
+    if(ext != VOID_TYPE && e == VOID_TYPE)
+    {
+    }
+}
+
 /* ------------------------- gencode ------------------------- */
 void IfStmt::gencode(FILE *f) const
 {

@@ -27,14 +27,25 @@ class FuncdefnStmt;
 class LabelCounter;
 extern LabelCounter _lcnter;
 
+/**
+ * @function: gencode(file)
+ * generate the asm code to the file
+ *
+ * @function retCheck(expected_type)
+ * check if the stmt given the return value of expected type
+ * in all return path
+ * default returns false
+ * @returns true if all match, otherwise false
+ */
 class Stmt
 {
     protected:
-        Expr_Type etype;
+        //Expr_Type etype;
         LabelCounter &lbcnt;
     public:
-        Stmt() : lbcnt(_lcnter) {etype = Expr_Type::GARBAGE_TYPE;}
+        Stmt() : lbcnt(_lcnter) {/*etype = Expr_Type::GARBAGE_TYPE;*/}
         virtual void gencode(FILE *f) const = 0;
+        virtual bool retCheck(Expr_Type ext) { return false; }
         virtual ~Stmt() = default;
 };
 
@@ -66,6 +77,7 @@ class IfStmt : public Stmt
         IfStmt(Expr *e, Stmt *t, Stmt *es = NULL)
             : cnd(e), thenStmt(t), elseStmt(es) {}
         virtual void gencode(FILE *f) const override;
+        virtual bool retCheck(Expr_Type) override;
 };
 
 class WhileStmt : public Stmt
@@ -76,6 +88,7 @@ class WhileStmt : public Stmt
     public:
         WhileStmt(Expr *e, Stmt *b) : cnd(e), body(b) {}
         virtual void gencode(FILE *f) const override;
+        virtual bool retCheck(Expr_Type) override;
 };
 
 class ReturnStmt : public Stmt
@@ -84,8 +97,9 @@ class ReturnStmt : public Stmt
         Expr *ret;
     public:
         /* if ret = NULL --> return (void) */
-        ReturnStmt(Expr *e = NULL) : ret(e){if(e) etype = e->getType();}
+        ReturnStmt(Expr *e = NULL) : ret(e){}
         virtual void gencode(FILE *f) const override;
+        virtual bool retCheck(Expr_Type) override;
 };
 
 class CompoundStmt : public Stmt
@@ -99,6 +113,7 @@ class CompoundStmt : public Stmt
             DBG_FUNC("CompoundStmt");
             for(auto stmt : *stmts) stmt->gencode(f);
         }
+        virtual bool retCheck(Expr_Type) override;
 };
 
 class FuncBodyStmt : public CompoundStmt
@@ -109,6 +124,7 @@ class FuncBodyStmt : public CompoundStmt
     public:
         FuncBodyStmt(std::vector<Stmt*> *ss) : CompoundStmt(ss) {}
         virtual void gencode(FILE *f) const override;
+        virtual bool retCheck(Expr_Type) override;
 };
 
 class VardeclStmt : public Stmt
@@ -179,6 +195,7 @@ class FuncdefnStmt : public Stmt
             bd->gencode(f);
             Emit(f, "end " + func->gencode() + "\n");
         }
+        virtual bool retCheck(Expr_Type) override;
 };
 
 
