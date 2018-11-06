@@ -1,13 +1,19 @@
 Opt:
     SymbolTable::getSymbol<T>(name, wronghint)
-    type check and conversion system for multi-type support
-    Function Return value check
-
+    //type check and conversion system for multi-type support
+    //Function Return value check
+    Deconstructors and memory deallocation
+    Optimize the return check code
+    {
+        delete old code
+        add new checkRet(ExpectedType) method
+    }
 
 
 Features:
     void and bool
     self operator
     type check
+    return check
     array literal
     var definition with expr
