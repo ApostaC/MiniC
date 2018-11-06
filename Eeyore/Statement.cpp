@@ -37,6 +37,17 @@ ArrdefnStmt::ArrdefnStmt(ArraySymbol *a, std::vector<Expr*> *i, SymbolTable *t)
                 std::to_string(arr->getLength()) + " But got " + std::to_string(init->size()));
 }
 
+
+VardefnStmt::VardefnStmt(VarSymbol *v, Expr *i, SymbolTable *t)
+    : VardeclStmt(v), init(i), table(t)
+{
+    /* TODO typecheck */
+    if(i->isVoid()) 
+        EmitError("Cannot assign a void value to others");
+    if(i->isInt() && v->getExprType() == BOOL_TYPE)
+        EmitWarning("Type conversion with narrowing: int -> bool");
+}
+
 /* ------------------------- return check --------------------------*/
 
 bool IfStmt::retCheck(Expr_Type ext)

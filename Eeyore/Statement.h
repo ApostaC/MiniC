@@ -148,8 +148,8 @@ class VardefnStmt : public VardeclStmt
         Expr *init;
         SymbolTable *table;
     public:
-        VardefnStmt(VarSymbol *v, Expr *i, SymbolTable *t) 
-            : VardeclStmt(v), init(i), table(t) {}
+        VardefnStmt(VarSymbol *v, Expr *i, SymbolTable *t) ;
+//            : VardeclStmt(v), init(i), table(t) {}
         virtual void gencode(FILE *f) const override;
 };
 

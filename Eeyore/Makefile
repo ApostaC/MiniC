@@ -3,6 +3,7 @@ OBJ = Symbols.o Express.o Statement.o
 
 eeyore: ${OBJ} Eeyore.tab.cpp lex.yy.cpp common.h Eeyore.cpp
 	g++ $^ -o $@ -lfl -std=c++14 -g
+	# cp eeyore test/
 
 %.o: %.cpp %.h
 	g++ -c $^ -std=c++14 -g

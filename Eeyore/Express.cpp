@@ -74,10 +74,6 @@ AssignExpr::AssignExpr(const std::string &name, Expr *r, SymbolTable *t)
     : Expr(r->getType(), t), left(NULL), right(r)
 {
     /* TODO: typecheck! */
-
-//    if(INSTANCE_OF(r, FuncSymbol))
-//        EmitError("Cannot assign function to other var");
-
     auto sym = t->getVariableSymbol(name);
     if(INSTANCE_OF(sym, ArraySymbol))
     {
@@ -93,6 +89,11 @@ AssignExpr::AssignExpr(const std::string &name, Expr *r, SymbolTable *t)
     }
     else
         EmitError("Left Value is not assignable!");
+
+    if(r->isVoid())
+        EmitError("Cannot assign a void value to others");
+    if(sym->getExprType() == BOOL_TYPE && r->isInt())
+        EmitWarning("Type conversion with narrowing: int -> bool");
 }
 
 
@@ -204,19 +205,28 @@ std::string FuncExpr::gencode(FILE *f) const
 {
     if(debug)
         std::cerr<<"//Generating FuncExpr code"<<std::endl;
-    /* get a temp name and emit the decl*/
-    VarSymbol *tempSym = this->table->generateNextTempVar(this->getType());
-    Emit(f, tempSym->gendecl() + "\n");
-    std::string ret{tempSym->gencode()};
     /* set the param in asm and call the function */
     std::vector<std::string> param_name;
     for(auto pexpr : *(this->params))
         param_name.push_back(pexpr->gencode(f));
     for(auto name : param_name)
         Emit(f, "param " + name + "\n");
-    Emit(f, ret + " = call " + func->gencode() + "\n");
-    delete tempSym;
-    return ret;
+
+    /* get a temp name and emit the decl*/
+    if(func->getExprType() != VOID_TYPE)
+    {
+        VarSymbol *tempSym = this->table->generateNextTempVar(this->getType());
+        Emit(f, tempSym->gendecl() + "\n");
+        std::string ret{tempSym->gencode()};
+        Emit(f, ret + " = call " + func->gencode() + "\n");
+        delete tempSym;
+        return ret;
+    }
+    else
+    {
+        Emit(f, "call " + func->gencode() + "\n");
+        return "";
+    }
     //TODO
 }
 
