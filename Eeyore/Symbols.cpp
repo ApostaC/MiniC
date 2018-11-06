@@ -229,7 +229,7 @@ std::string SymbolTable::errorHint(Symbol *sym)
     int line = sym->getlineno();
     std::string error {"\n"};
     if(line > 1)
-        error += BOLD_KGRN "Note: " KNRM + sym->getIdentifier() + 
+        error += BOLD_KCYN "note: " KNRM + sym->getIdentifier() + 
             " is defined at line: " + std::to_string(line);
     return error;
 
