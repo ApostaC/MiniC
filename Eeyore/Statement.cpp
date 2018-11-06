@@ -17,6 +17,12 @@ static void modify_etype(Expr_Type &in, Expr_Type newt)
             in = newt;
 }
 
+static void emit_note(const std::string &s, int line)
+{
+    std::cerr<<"Line: "<<line<<" -- " BOLD_KCYN "note: " KNRM<<
+        s<<std::endl;
+}
+
 /* ----------------------- compile time check --------------------- */
 
 ArrdefnStmt::ArrdefnStmt(ArraySymbol *a, std::vector<Expr*> *i, SymbolTable *t) 
@@ -79,11 +85,27 @@ bool ReturnStmt::retCheck(Expr_Type ext)
     if(ext == VOID_TYPE && e != VOID_TYPE)
     {
         EmitWarning("Return with a value, in function returning void");
-        return false;
+        emit_note("return sentence here", this->lineno); 
     }
     if(ext != VOID_TYPE && e == VOID_TYPE)
     {
+        EmitWarning("Return with no value, in function returning non-void");
+        emit_note("return sentence here", this->lineno);
     }
+    return true;
+}
+
+bool CompoundStmt::retCheck(Expr_Type ext)
+{
+    bool ret = false;
+    for(auto stmt : *stmts)
+        ret |= stmt->retCheck(ext);
+    return ret;
+}
+
+bool FuncBodyStmt::retCheck(Expr_Type ext)
+{
+    return CompoundStmt::retCheck(ext);
 }
 
 /* ------------------------- gencode ------------------------- */
@@ -149,7 +171,8 @@ void FuncBodyStmt::gencode(FILE *f) const
 void ReturnStmt::gencode(FILE *f) const
 {
     DBG_FUNC("ReturnStmt");
-    std::string name = this->ret->gencode(f);
+    std::string name = "";
+    if(ret) name = this->ret->gencode(f);
     Emit(f, "return " + name + "\n");
 }
 

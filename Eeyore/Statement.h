@@ -35,15 +35,17 @@ extern LabelCounter _lcnter;
  * check if the stmt given the return value of expected type
  * in all return path
  * default returns false
- * @returns true if all match, otherwise false
+ * @returns true if all path have return value no matter type match
+ *          , otherwise false
  */
 class Stmt
 {
     protected:
         //Expr_Type etype;
+        int lineno;
         LabelCounter &lbcnt;
     public:
-        Stmt() : lbcnt(_lcnter) {/*etype = Expr_Type::GARBAGE_TYPE;*/}
+        Stmt() : lbcnt(_lcnter) {lineno = yylineno;}
         virtual void gencode(FILE *f) const = 0;
         virtual bool retCheck(Expr_Type ext) { return false; }
         virtual ~Stmt() = default;
@@ -187,6 +189,7 @@ class FuncdefnStmt : public Stmt
                 bd = dynamic_cast<FuncBodyStmt*>(b);
             else
                 EmitError("Unknown Error: FuncdefnStmt.NO_FUNC_BODY");
+            bd->retCheck(func->getExprType());
         }
         virtual void gencode(FILE *f) const override
         {
@@ -195,7 +198,6 @@ class FuncdefnStmt : public Stmt
             bd->gencode(f);
             Emit(f, "end " + func->gencode() + "\n");
         }
-        virtual bool retCheck(Expr_Type) override;
 };
 
 
