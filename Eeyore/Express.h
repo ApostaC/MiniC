@@ -34,15 +34,14 @@ class Expr
     public:
         bool isVoid(){return etype == Expr_Type::VOID_TYPE;}
         bool isBool(){return etype == Expr_Type::BOOL_TYPE;}
-        bool isInt(){return etype == Expr_Type::INT_TYPE;}
+        bool isInt() {return etype == Expr_Type::INT_TYPE;}
     public:
         Expr(Expr_Type et, SymbolTable *st) : etype(et), table(st) { lineno = yylineno;}
         Expr_Type getType() const {return etype;}
 
-        /* Gencode: output something to the file and return the name of the 
+        /* Gencode: output something to the file and return the name of the
          * temporary variable of this expression */
         virtual std::string gencode(FILE *f) const = 0;
-
         virtual ~Expr() = default;
 };
 

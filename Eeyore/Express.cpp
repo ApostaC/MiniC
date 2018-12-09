@@ -157,7 +157,7 @@ std::string UnaryExpr::gencode(FILE *f) const
     Symbol *tempSym = this->table->generateNextTempVar(this->getType());
     std::string ret = tempSym->gencode();
     Emit(f, tempSym->gendecl() + "\n");
-    Emit(f, ret + " = " + type2str[this->oper] + rightn + "\n");
+    Emit(f, ret + " = " + type2str[this->oper] + " " + rightn + "\n");
     delete tempSym;
     return ret;
     //TODO:
