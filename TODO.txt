@@ -1,16 +1,6 @@
 Opt:
     SymbolTable::getSymbol<T>(name, wronghint)
-    //type check and conversion system for multi-type support
-    //Function Return value check
     Deconstructors and memory deallocation
-    Optimize the return check code
-    {
-        delete old code
-        add new checkRet(ExpectedType) method
-        {
-            
-        }
-    }
 
 
 Features:
@@ -20,3 +10,44 @@ Features:
     return check
     array literal
     var definition with expr
+    much infomation about error and warning
+
+
+
+Tigger:
+    read input and give Intrinsic object
+    initialize a map of <lineno, Intrin> and connect them
+            // vector may also be possible?
+    liveness analysis
+
+    SSA --> use a map to record how to access a variable
+    generate the code
+    
+    ** Variable --> RightVariable: can be EeyoreVar or IntVar
+    ** resource mgr should give correct imm-value or memory position of RightVariable
+
+    ** s11 stores the imm value in expression
+
+liveness analysis: done!
+    param: an intrin set
+    return: map<time, live-var-set>
+
+gencode version 1:
+    Resmgr maintain the variable's position
+    methods to access the variable and resources
+        Load(var) // move (may allocate) value on stack into reg
+        Lea(var)  // move the address of the var into reg
+        Store(var)// move the var's reg into stack
+        SaveRegs();     // no need
+        RestoreRegs();  // no need
+
+    Need to represent the var's position
+        map<POSITION_T, offset> 
+        POSITION_T -- enum { STACK, REG }
+
+
+
+DEBUG INFO:
+    record "prev_line" in Function
+    make a function to get "prev_line"
+    subsitude all "lineno - 1" to "prev_line"
