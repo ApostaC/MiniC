@@ -337,8 +337,10 @@ class Iunaryexpr : public Intrin
         }
         virtual std::string gencode(FILE *f) const override
         {
-            auto lreg = this->f.getReg(f, lvar, lineno),
-                 rreg = this->f.getReg(f, rvar, getPrevLineno());
+
+            auto lreg = this->f.getReg(f, lvar, lineno);
+            std::string rreg;
+            rreg = this->f.getReg(f, rvar, getPrevLineno());
             Emit(f, lreg + " = " + op + " " + rreg + " // Iunaryexpr\n");
             if(lreg[0] == 't' || res::globalVars.isGlobalVar(lvar))
             {
@@ -464,10 +466,39 @@ class Ibinexpr : public Intrin
         virtual std::string gencode(FILE *f) const override
         {
             auto lreg = this->f.getReg(f, lvar, this->lineno);
-            auto r1 = this->f.getReg(f, rvar1, this->getPrevLineno()),
-                 r2 = this->f.getReg(f, rvar2, this->getPrevLineno());
+            std::string r1, r2;
+            if(INSTANCE_OF(rvar1, res::ImmediateVal))
+            {
+                if(INSTANCE_OF(rvar2, res::ImmediateVal))
+                {
+                    auto v1 = (res::ImmediateVal*)rvar1,
+                         v2 = (res::ImmediateVal*)rvar2;
+                    auto val = 0;
+                    switch(this->op[0])
+                    {
+                        case '+': val = v1->getval() + v2->getval(); break;
+                        case '-': val = v1->getval() - v2->getval(); break;
+                        case '*': val = v1->getval() * v2->getval(); break;
+                        case '/': val = v1->getval() / v2->getval(); break;
+                        case '%': val = v1->getval() % v2->getval(); break;
+                        case '<': val = v1->getval() < v2->getval(); break;
+                        case '>': val = v1->getval() > v2->getval(); break;
+                        case '&': val = v1->getval()&& v2->getval(); break;
+                        case '|': val = v1->getval()|| v2->getval(); break;
+                        case '!': val = v1->getval()!= v2->getval(); break;
+                        case '=': val = v1->getval()== v2->getval(); break;
+                        default:
+                                  throw std::runtime_error("Unknown Not Found: " + this->op);
+                    }
+                    Emit(f, lreg + " = " + std::to_string(val));
+                    goto BACK;
+                }
+            }
+            r1 = this->f.getReg(f, rvar1, this->getPrevLineno());
+            r2 = this->f.getReg(f, rvar2, this->getPrevLineno());
             Emit(f, lreg + " = " + r1 + " " + this->op + " " + 
                     r2 + " // Ibinexpr\n");
+BACK:
             if(lreg[0] == 't' || res::globalVars.isGlobalVar(lvar))
             {
                 res::RegPool pool;
