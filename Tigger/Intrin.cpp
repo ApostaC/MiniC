@@ -6,6 +6,7 @@
 #include "common.h"
 #include "Intrin.h"
 
+
 #define DBG_PRINT(name) \
     if(global_debug_flag)   \
         std::cerr<<"Debug: "<<name<<std::endl;  \
@@ -230,10 +231,16 @@ class Iassign : public Intrin
 
         virtual std::string gencode(FILE *f) const override
         {
-            /* TODO: OPTIMIZATION FOR RVAL = CONSTANT HERE! */
-            auto lreg = this->f.getReg(f, lvar, lineno),
-                 rreg = this->f.getReg(f, rvar, getPrevLineno());
-            Emit(f, lreg + " = " + rreg + " // Iassign\n");
+            auto lreg = this->f.getReg(f, lvar, lineno);
+            std::string rreg;
+            /* OPTIMIZATION FOR CONSTANT, do not use reg */
+            if(INSTANCE_OF(rvar, res::ImmediateVal))
+                rreg = rvar->getName();
+            else
+                rreg = this->f.getReg(f, rvar, getPrevLineno());
+
+            if(lreg != rreg)
+                Emit(f, lreg + " = " + rreg + " // Iassign\n");
             if(lreg[0] == 't' || res::globalVars.isGlobalVar(lvar)) // temp reg
             {
                 res::RegPool temp;

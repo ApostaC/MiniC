@@ -2,10 +2,10 @@
 OBJ = common.o Resources.o RegAlloc.o Intrin.o Tigger.o
 
 tigger: ${OBJ} #Tigger.tab.cpp lex.yy.cpp
-	g++ $^ -o $@ -lfl -std=c++14 -g
+	g++ $^ -o $@ -lfl -std=c++14 -g -Ofast
 
 %.o: %.cpp %.h
-	g++ -c $^ -std=c++14 -g
+	g++ -c $^ -std=c++14 -g -Ofast
 
 #Tigger.tab.cpp: Tigger.y
 #	bison -d Tigger.y -o Tigger.tab.cpp

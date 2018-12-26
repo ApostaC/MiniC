@@ -51,3 +51,10 @@ DEBUG INFO:
     record "prev_line" in Function
     make a function to get "prev_line"
     subsitude all "lineno - 1" to "prev_line"
+
+optimization:
+    inline
+    load/store
+    stack size
+    mov opti
+    const opti
