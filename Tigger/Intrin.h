@@ -84,21 +84,26 @@ class Function
     private:
         using IntrinSet = std::map<int, Intrin*>;
         IntrinSet intrins;
+        IntrinManager *pmgr;
         res::RegPool tempPool;
         res::StackFrame stk;
         bool inited = false;
     private:
+        res::RegAllocer *pallocer = NULL;
         res::RegAllocer::AllocResult_t allocresult;
+        std::set<res::RegID> usedReg;
     public:
         int paramcnt = -1;
     public:
-        Function();
+        Function(IntrinManager *);
         void AddIntrin(Intrin *);
         void Initialize(); // call after finishing AddIntrin
+        void InitRes(res::Liveness &liveness); // call after Initialize
         int GetSize(){Initialize(); return this->stk.GetSlots();}
         IntrinSet &getIntrins(){return intrins;}
         bool Optimize(res::Liveness &liveness);
         res::StackFrame &getStack(){return stk;}
+        ~Function(){delete pallocer;}
 
     private:
         int tempParamCount = 0;
@@ -117,12 +122,12 @@ class Function
     public:
         Intrin *getPrevIntrin(const Intrin *in);
         /* ABI for codegen */
-        void gencode(FILE *f, res::Liveness &liveness);
+        void gencode(FILE *f);//, res::Liveness &liveness);
         std::string getReg(FILE *f, res::RightVariable *rvar, int lineno);
         std::string PrepareParam(FILE *f); // return the next free "a?" reg
         void StartFun(FILE *f);     // save callee saved regs
-        void PrepareCalling(FILE *f); // store the regs into stack
-        void EndCalling(FILE *f);   // restore the regs from stack
+        void PrepareCalling(FILE *f, const std::string &); // store the regs into stack
+        void EndCalling(FILE *f, const std::string &);   // restore the regs from stack
         void EndFun(FILE *f);       // restore callee saved regs
         void BackToStack(FILE *f, res::EeyoreVariable *lvar, int reg, int offreg = 0);
         void BackToGlobal(FILE *f, res::EeyoreVariable *gvar, int reg, int offreg = 0);
@@ -167,7 +172,7 @@ class IntrinManager
             this->lines = 1;
             auto &s = GLOBAL_RESMGR_NAME;
             curr_func = GLOBAL_SCOPE_NAME;
-            funcs[curr_func] = new Function();
+            funcs[curr_func] = new Function(this);
         }
         /**
          * add intrin (update labels here)
@@ -191,7 +196,11 @@ class IntrinManager
             for(auto func : this->funcs) ret.push_back(func.first);
             return ret;
         }
-        Function &getfunc(const std::string &f) { return *this->funcs[f]; }
+        Function &getfunc(const std::string &f) { 
+            if(this->funcs.count(f) == 0)
+                throw std::runtime_error("No such function");
+            return *this->funcs[f]; 
+        }
 };
 
 /* Functions */

@@ -180,6 +180,7 @@ class RegAllocer
         Liveness &liveness;
         StackFrame &stack;
         std::multiset<SpillInfo> spillPos; // position to spill, used in Function::gencode
+        std::set<RegID> usedRegs;
 
     public:
         using VarInfoList = std::set<VarInfo>;
@@ -204,6 +205,11 @@ class RegAllocer
         decltype(spillPos.equal_range({1,NULL}))
             GetSpillInfo(int line) 
             { return spillPos.equal_range({line, NULL});}
+
+        const std::set<RegID> &GetUsedRegs() const
+        {
+            return usedRegs;
+        }
 };
 
 
