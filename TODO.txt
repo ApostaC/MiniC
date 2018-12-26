@@ -54,7 +54,7 @@ DEBUG INFO:
 
 optimization:
     inline
-    load/store
-    stack size
-    mov opti
-    const opti
+    load/store  // done
+    stack size 
+    mov opti    // done
+    const opti  // done
