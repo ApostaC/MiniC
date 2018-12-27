@@ -800,17 +800,9 @@ void Function::PrepareCalling(FILE *f, const std::string &fn) // save t0 - t5, a
     /* t0:13; t5:18 ; a0:19*/
     //for(int i = 19 + tempParamCount; i < 27; i++)
     //    _savereg(f, i); //save a0 - a7
-    try
+    for(auto regid : usedReg)
     {
-        auto &func = this->pmgr->getfunc(fn);
-        for(auto regid : func.usedReg)
-        {
-            if(19 <= regid && regid < 27) _savereg(f, regid);
-        }
-    }catch(...)
-    {
-        for(int i = 19 + tempParamCount; i < 27; i++)
-            _savereg(f, i); //save a0 - a7
+        if(regid >= 19 + tempParamCount && regid < 27) _savereg(f, regid);
     }
 }
 
@@ -820,17 +812,10 @@ void Function::EndCalling(FILE *f, const std::string &fn)
     //for(int i = 13; i<=18; i++) _restorereg(f, i);
     //for(int i = 1; i<8; i++) _restorereg(f, i+19); //restore a1 - a7
     tempParamCount = 0;
-    try{
-        auto &func = this->pmgr->getfunc(fn);
-        for(auto regid : func.usedReg)
-        {
-            if(19 <= regid && regid < 27) _restorereg(f, regid);
-        }
-    }catch(...)
+    for(auto regid : usedReg)
     {
-        for(int i = 1; i<8; i++) _restorereg(f, i+19); //restore a1 - a7
+        if(regid > 19 && regid < 27) _restorereg(f, regid);
     }
-    //_restorereg(f, 19); //restore a0
 }
 
 bool Function::Optimize(res::Liveness &liveness)
