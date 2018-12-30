@@ -1,7 +1,7 @@
 
 OBJ = common.o Resources.o RegAlloc.o Intrin.o Tigger.o
 
-FLAGS = -std=c++14 -g #-Ofast
+FLAGS = -std=c++14 -g -Ofast
 
 tigger: ${OBJ} #Tigger.tab.cpp lex.yy.cpp
 	g++ $^ -o $@ -lfl ${FLAGS}
