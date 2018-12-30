@@ -328,12 +328,6 @@ void gencode(const std::vector<std::string> &line)
     for(auto v : line) std::cerr<<v<<" ";
     std::cerr<<std::endl;
 
-    if(len == 5 && Contains(reg_names, line[0]) 
-            /*&& Contains(reg_names, line[2]) && Contains(reg_names, line[4])
-            && Contains(expr_ops, line[3])*/)
-    {
-        std::cerr<<"HERE!"<<std::endl;
-    }
 }
 
 
