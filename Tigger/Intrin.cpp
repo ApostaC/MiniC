@@ -198,9 +198,9 @@ class Icallvfun : public Intrin
 
         virtual std::string gencode(FILE *f) const override
         {
-            this->f.PrepareCalling(f);
+            this->f.PrepareCalling(f, funcname);
             fprintf(f,"call %s\n", funcname.c_str());
-            this->f.EndCalling(f);
+            this->f.EndCalling(f, funcname);
             /* restore a0:19 */
             auto offset = this->f.getStack().GetRegAddr(19);
             this->f.getStack().gencode_spillout(f, offset, 19);
@@ -293,10 +293,10 @@ class Icallfunc : public Intrin
 
         virtual std::string gencode(FILE *f) const override
         {
-            this->f.PrepareCalling(f);
+            this->f.PrepareCalling(f, fname);
             fprintf(f, "call %s\n", fname.c_str());
             auto lreg = this->f.getReg(f, lvar, lineno);
-            this->f.EndCalling(f);
+            this->f.EndCalling(f, fname);
             Emit(f, lreg + " = a0 // Icallfunc\n");
             /* restore a0:19 */
             auto offset = this->f.getStack().GetRegAddr(19);
@@ -337,8 +337,10 @@ class Iunaryexpr : public Intrin
         }
         virtual std::string gencode(FILE *f) const override
         {
-            auto lreg = this->f.getReg(f, lvar, lineno),
-                 rreg = this->f.getReg(f, rvar, getPrevLineno());
+
+            auto lreg = this->f.getReg(f, lvar, lineno);
+            std::string rreg;
+            rreg = this->f.getReg(f, rvar, getPrevLineno());
             Emit(f, lreg + " = " + op + " " + rreg + " // Iunaryexpr\n");
             if(lreg[0] == 't' || res::globalVars.isGlobalVar(lvar))
             {
@@ -464,10 +466,39 @@ class Ibinexpr : public Intrin
         virtual std::string gencode(FILE *f) const override
         {
             auto lreg = this->f.getReg(f, lvar, this->lineno);
-            auto r1 = this->f.getReg(f, rvar1, this->getPrevLineno()),
-                 r2 = this->f.getReg(f, rvar2, this->getPrevLineno());
+            std::string r1, r2;
+            if(INSTANCE_OF(rvar1, res::ImmediateVal))
+            {
+                if(INSTANCE_OF(rvar2, res::ImmediateVal))
+                {
+                    auto v1 = (res::ImmediateVal*)rvar1,
+                         v2 = (res::ImmediateVal*)rvar2;
+                    auto val = 0;
+                    switch(this->op[0])
+                    {
+                        case '+': val = v1->getval() + v2->getval(); break;
+                        case '-': val = v1->getval() - v2->getval(); break;
+                        case '*': val = v1->getval() * v2->getval(); break;
+                        case '/': val = v1->getval() / v2->getval(); break;
+                        case '%': val = v1->getval() % v2->getval(); break;
+                        case '<': val = v1->getval() < v2->getval(); break;
+                        case '>': val = v1->getval() > v2->getval(); break;
+                        case '&': val = v1->getval()&& v2->getval(); break;
+                        case '|': val = v1->getval()|| v2->getval(); break;
+                        case '!': val = v1->getval()!= v2->getval(); break;
+                        case '=': val = v1->getval()== v2->getval(); break;
+                        default:
+                                  throw std::runtime_error("Unknown Not Found: " + this->op);
+                    }
+                    Emit(f, lreg + " = " + std::to_string(val));
+                    goto BACK;
+                }
+            }
+            r1 = this->f.getReg(f, rvar1, this->getPrevLineno());
+            r2 = this->f.getReg(f, rvar2, this->getPrevLineno());
             Emit(f, lreg + " = " + r1 + " " + this->op + " " + 
                     r2 + " // Ibinexpr\n");
+BACK:
             if(lreg[0] == 't' || res::globalVars.isGlobalVar(lvar))
             {
                 res::RegPool pool;
@@ -515,8 +546,9 @@ class Icjmp : public Intrin
 /*                    Intrin Manager                      */
 /* ====================================================== */
 
-Function::Function()
+Function::Function(IntrinManager *pmg)
 {
+    this->pmgr = pmg;
     std::vector<int> freereg{13,14,15,16,17,18};   
     this->tempPool = res::RegPool(freereg);
     inited = false;
@@ -561,15 +593,14 @@ void Function::Initialize()
     inited = true;
 }
 
-void Function::gencode(FILE *f, res::Liveness &liveness)
+void Function::InitRes(res::Liveness &liveness)
 {
-    Initialize();
     /* CODE ANALYSIS from liveness */
     /* REG ALLOCATION */
-    res::RegAllocer allocer(liveness, this->stk);
-    allocresult = allocer.Alloc();
-    /* debug info ! */
-    //if(global_debug_flag)
+    pallocer = new res::RegAllocer(liveness, this->stk);
+    allocresult = pallocer->Alloc();
+    this->usedReg = pallocer->GetUsedRegs();
+    if(global_debug_flag)
     {
         std::cerr<<"Liveness result:========================== "<<std::endl;
         for(auto ent : liveness)
@@ -588,7 +619,7 @@ void Function::gencode(FILE *f, res::Liveness &liveness)
                 std::cerr<<"("<<varinfo.var->getName()<<", "
                     <<res::globalRegs[varinfo.reg]<<") ";
             }
-            auto sinfo = allocer.GetSpillInfo(ent.first);
+            auto sinfo = pallocer->GetSpillInfo(ent.first);
             if(std::distance(sinfo.first, sinfo.second) > 0)
             {
                 std::cerr<<" [spill: ";
@@ -601,6 +632,12 @@ void Function::gencode(FILE *f, res::Liveness &liveness)
             std::cerr<<std::endl;
         }
     }
+}
+
+void Function::gencode(FILE *f)//, res::Liveness &liveness)
+{
+    //Initialize();
+    /* debug info ! */
     /* TRANSLATION */
     res::VarList valid_live;
     for(auto ent : this->intrins)
@@ -624,7 +661,7 @@ void Function::gencode(FILE *f, res::Liveness &liveness)
         }
 
         /* before next intrin gencode, we find the spill info */
-        auto sinfo = allocer.GetSpillInfo(ent.first + 1);
+        auto sinfo = pallocer->GetSpillInfo(ent.first + 1);
         std::for_each(sinfo.first, sinfo.second,
                 [this, &aled, f](auto &spillinfo){
                     auto var = spillinfo.var;
@@ -741,29 +778,44 @@ void Function::BackToMemory(FILE *f, res::EeyoreVariable *var, int reg, int offr
 void Function::StartFun(FILE *f) //save s0 - s11 (save params?)
 {
     /* s0: 1; s11: 12 */
-    for(int i = 1; i<= 12; i++) _savereg(f, i);
+    //for(int i = 1; i<= 12; i++) _savereg(f, i);
     //for(int i = 19; i<=26; i++) _savereg(f, i);
+    for(auto regid : usedReg)
+    {
+        if(regid >= 1 && regid <= 12) _savereg(f, regid);
+    }
 }
 
 void Function::EndFun(FILE *f)
 {
-    for(int i = 1; i <= 12; i++) _restorereg(f, i);
+    //for(int i = 1; i <= 12; i++) _restorereg(f, i);
+    for(auto regid : usedReg)
+    {
+        if(regid >= 1 && regid <= 12) _restorereg(f, regid);
+    }
 }
 
-void Function::PrepareCalling(FILE *f) // save t0 - t5, a1 - a7
+void Function::PrepareCalling(FILE *f, const std::string &fn) // save t0 - t5, a1 - a7
 {
     /* t0:13; t5:18 ; a0:19*/
-    for(int i = 19 + tempParamCount; i < 27; i++)
-        _savereg(f, i); //save a0 - a7
+    //for(int i = 19 + tempParamCount; i < 27; i++)
+    //    _savereg(f, i); //save a0 - a7
+    for(auto regid : usedReg)
+    {
+        if(regid >= 19 + tempParamCount && regid < 27) _savereg(f, regid);
+    }
 }
 
-void Function::EndCalling(FILE *f)
+void Function::EndCalling(FILE *f, const std::string &fn)
 {
     /* restore t0-t5, a1 - a? */
     //for(int i = 13; i<=18; i++) _restorereg(f, i);
-    for(int i = 1; i<8; i++) _restorereg(f, i+19); //restore a1 - a7
+    //for(int i = 1; i<8; i++) _restorereg(f, i+19); //restore a1 - a7
     tempParamCount = 0;
-    //_restorereg(f, 19); //restore a0
+    for(auto regid : usedReg)
+    {
+        if(regid > 19 && regid < 27) _restorereg(f, regid);
+    }
 }
 
 bool Function::Optimize(res::Liveness &liveness)
@@ -891,7 +943,7 @@ void IntrinManager::NewScope(const std::string &scopename)
 {
     DBG_PRINT("New Scope: " + scopename);
     curr_func = scopename;
-    funcs[curr_func] = new Function();
+    funcs[curr_func] = new Function(this);
 }
 
 void IntrinManager::EndScope()
@@ -1023,7 +1075,8 @@ void IntrinManager::gencode(FILE *f)
             liveness = LivenessAnalysis(*this, funcent.first);
             opted = funcent.second->Optimize(liveness);
         }while(opted);
- 
+        funcent.second->InitRes(liveness);
+
         /* debug! */
         {
             std::cerr<<"After Optimize: "<<std::endl;
@@ -1036,7 +1089,7 @@ void IntrinManager::gencode(FILE *f)
             global_debug_flag = 0;
         }
 
-        funcent.second->gencode(f, liveness);
+        funcent.second->gencode(f);
     }
     /* TODO: main gencode function here! */
 }

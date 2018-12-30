@@ -229,6 +229,7 @@ RegAllocer::AllocResult_t RegAllocer::Alloc()
                                     + pool.getRID("a0")
                                     );
                         else rid = pool.AllocReg();
+                        usedRegs.insert(rid);
                         active.insert(intev);
                         registers[*intev.var] = rid;
                     }
