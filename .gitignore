@@ -3,6 +3,6 @@
 *.gch
 *trybuild*
 *test*
-eeyore
-tigger
-riscv64
+*eeyore
+*tigger
+*riscv64

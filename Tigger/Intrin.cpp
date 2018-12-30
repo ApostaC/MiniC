@@ -14,8 +14,6 @@
 #define DBP_FUNC \
     virtual void dbg_print() const override
 
-static std::ofstream fout("eeyorecode.txt", std::ios::out);
-
 namespace intr
 {
 /* Intrin's derived class definition */
@@ -972,7 +970,6 @@ void IntrinManager::AddIntrin(const std::string &line)
 {
 #define ADDI(type) _addintrin(new type(vec, lines, getfunc(curr_func)))
     this->input.push_back(line);
-    fout<<line<<std::endl;
     std::vector<std::string> vec = split(line, ' ');
     switch(vec.size())
     {

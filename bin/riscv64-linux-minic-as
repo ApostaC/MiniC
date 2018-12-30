@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then 
+    echo "Usage $0 <filename>"
+fi
+
+fin=${1##*/}
+prefix=${fin%%.*}
+echo ${fin} ${prefix}
+
+cat $1 | ./eeyore | ./tigger | ./riscv64 | tee ${prefix}.as
