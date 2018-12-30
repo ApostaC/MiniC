@@ -1,12 +1,18 @@
 #!/bin/bash
 
 if [ $# -ne 1 ]; then 
-    echo "Usage $0 <filename>"
+    echo "Usage: $0 <filename>"
+    exit
 fi
 
-fin=${1##*/}
-prefix=${fin%%.*}
+BIN_DIR=${0%/*}
+EEYORE=${BIN_DIR}/eeyore
+TIGGER=${BIN_DIR}/tigger
+RISCV64=${BIN_DIR}/riscv64
 
-cat $1 | ./eeyore | tee ${prefix}.e | ./tigger 2>/dev/null | tee ${prefix}.tig | ./riscv64 2>/dev/null 1>${prefix}.S
+fin=${1##*/}
+prefix=`pwd`/${fin%.*}
+
+cat $1 | ${EEYORE} | tee ${prefix}.e | ${TIGGER} 2>/dev/null | tee ${prefix}.tig | ${RISCV64} 2>/dev/null 1>${prefix}.S
 
 echo "Complie finished! Code generated to ${prefix}.S"
