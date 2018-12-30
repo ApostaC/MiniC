@@ -1,17 +1,14 @@
 
 OBJ = common.o Resources.o RegAlloc.o Intrin.o Tigger.o
 
+FLAGS = -std=c++14 -g #-Ofast
+
 tigger: ${OBJ} #Tigger.tab.cpp lex.yy.cpp
-	g++ $^ -o $@ -lfl -std=c++14 -g -Ofast
+	g++ $^ -o $@ -lfl ${FLAGS}
+	cp tigger test/tigger
 
 %.o: %.cpp %.h
-	g++ -c $^ -std=c++14 -g -Ofast
-
-#Tigger.tab.cpp: Tigger.y
-#	bison -d Tigger.y -o Tigger.tab.cpp
-
-#lex.yy.cpp: Tigger.l
-#	flex -o lex.yy.cpp Tigger.l
+	g++ -c $^ ${FLAGS}
 
 .PHONY: clean clean_intermediate lines
 

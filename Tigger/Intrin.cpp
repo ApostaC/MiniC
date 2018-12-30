@@ -20,7 +20,13 @@ namespace intr
 {
 /* Intrin's derived class definition */
 
-int Intrin::getPrevLineno()const {return f.getPrevIntrin(this)->getline();}
+int Intrin::getPrevLineno() const 
+{
+    Intrin *prev = f->getPrevIntrin(this);
+    if(prev) return prev->getline();
+    else return 0;
+    //return f->getPrevIntrin(this)->getline();
+}
 
 class Ilabel : public Intrin
 {
@@ -29,7 +35,7 @@ class Ilabel : public Intrin
         std::string name;
     public:
         std::string getname(){return name;}
-        Ilabel(std::vector<std::string> &n, int lineno, Function &m) 
+        Ilabel(std::vector<std::string> &n, int lineno, Function *m) 
             : Intrin(lineno,m), name(n[0]) {}
         virtual std::string gencode(FILE *f) const override 
         { 
@@ -43,10 +49,10 @@ class Ivreturn : public Intrin
 {
     public:
     public:
-        Ivreturn(std::vector<std::string> &, int lineno, Function &m) : Intrin(lineno, m) {}
+        Ivreturn(std::vector<std::string> &, int lineno, Function *m) : Intrin(lineno, m) {}
         virtual std::string gencode(FILE *f) const override
         {
-            this->f.EndFun(f);
+            this->f->EndFun(f);
             fprintf(f, "return // Ivreturn\n");
             return "";
         }
@@ -59,7 +65,7 @@ class Ijmp : public Intrin
         /* ee&ti: goto label */
         std::string label;
     public:
-        Ijmp(std::vector<std::string> &vec, int linno, Function &m)
+        Ijmp(std::vector<std::string> &vec, int linno, Function *m)
             : Intrin(linno, m), label(vec[1]) {}
         virtual std::string gencode(FILE *f) const override
         {
@@ -75,7 +81,7 @@ class Ivardef : public Intrin
         /* ee: var varname */
         res::EeyoreVariable *var;
     public:
-        Ivardef(std::vector<std::string> &vec, int lineno, Function &m)
+        Ivardef(std::vector<std::string> &vec, int lineno, Function *m)
             : Intrin(lineno, m)
         {
             var = res::EeyoreVariable::GenRvar(vec[1]);
@@ -97,7 +103,7 @@ class Iendfun : public Intrin
         /* ee: end f_main */
         std::string name;
     public:
-        Iendfun(std::vector<std::string> &vec, int lineno, Function &m)
+        Iendfun(std::vector<std::string> &vec, int lineno, Function *m)
             : Intrin(lineno, m), name(vec[1]) {}
         virtual std::string gencode(FILE *f) const override
         {
@@ -114,7 +120,7 @@ class Iparam : public Intrin
         /* ee: param t3 */
         res::RVariable *var;   
     public:
-        Iparam(std::vector<std::string> &vec, int lineno, Function &m)
+        Iparam(std::vector<std::string> &vec, int lineno, Function *m)
             : Intrin(lineno, m), var(res::RVariable::GenRvar(vec[1]))
         {
             if(INSTANCE_OF(var, res::EeyoreVariable))
@@ -124,8 +130,8 @@ class Iparam : public Intrin
         virtual std::string gencode(FILE *f) const override
         {
             // number should come from resource manager
-            auto preg = this->f.PrepareParam(f);
-            auto vreg = this->f.getReg(f, var, this->getPrevLineno()); //result from last line
+            auto preg = this->f->PrepareParam(f);
+            auto vreg = this->f->getReg(f, var, this->getPrevLineno()); //result from last line
             Emit(f, preg + " = " + vreg + "\n");
             return "";
         } 
@@ -140,7 +146,7 @@ class Ireturn : public Intrin
         /* ee: return t3 */
         res::RVariable *var;
     public: 
-        Ireturn(std::vector<std::string> &vec, int lineno, Function &m)
+        Ireturn(std::vector<std::string> &vec, int lineno, Function *m)
             : Intrin(lineno, m), var(res::RVariable::GenRvar(vec[1]))
         {
             if(INSTANCE_OF(var, res::EeyoreVariable))
@@ -149,9 +155,9 @@ class Ireturn : public Intrin
         virtual std::string gencode(FILE *f)const override
         {
             /* TODO: OPTIMIZATION FOR RETURN A CONTSANT HERE! */ 
-            auto reg = this->f.getReg(f, var, getPrevLineno());
+            auto reg = this->f->getReg(f, var, getPrevLineno());
             Emit(f, "a0 = " + reg + " // Ireturn\n");
-            this->f.EndFun(f);
+            this->f->EndFun(f);
             Emit(f, "return // Ireturn\n");
             return "";
         }
@@ -166,9 +172,11 @@ class Ifuncst : public Intrin
         std::string name;
         std::string paramcnt;
     public:
-        Ifuncst(const std::vector<std::string> &vec, int lineno, Function &m)
-            : Intrin(lineno, m), name(vec[0]), paramcnt(vec[1])
+        Ifuncst(const std::vector<std::string> &vec, int lineno, Function *m)
+            : Intrin(0, m), name(vec[0]), paramcnt(vec[1])
         {
+            // mark all start function's lineno to 0
+            // for getPrevIntrin or something like that
         }
         DBP_FUNC{
             DBG_PRINT("Ifuncst: "+ name + " with " + paramcnt);
@@ -176,9 +184,9 @@ class Ifuncst : public Intrin
 
         virtual std::string gencode(FILE *f) const override
         {
-            auto size = this->f.getStack().GetSlots();
+            auto size = this->f->getStack().GetSlots();
             Emit(f, name + " " + paramcnt + " [" + std::to_string(size) +"]\n");
-            this->f.StartFun(f);
+            this->f->StartFun(f);
             return "";
         }
 };
@@ -188,7 +196,7 @@ class Icallvfun : public Intrin
     public:
         std::string funcname;
     public:
-        Icallvfun(std::vector<std::string> &fn, int lineno, Function &m)
+        Icallvfun(std::vector<std::string> &fn, int lineno, Function *m)
             : Intrin(lineno, m), funcname(fn[1])
         {
         }
@@ -198,12 +206,12 @@ class Icallvfun : public Intrin
 
         virtual std::string gencode(FILE *f) const override
         {
-            this->f.PrepareCalling(f, funcname);
+            this->f->PrepareCalling(f, funcname);
             fprintf(f,"call %s\n", funcname.c_str());
-            this->f.EndCalling(f, funcname);
+            this->f->EndCalling(f, funcname);
             /* restore a0:19 */
-            auto offset = this->f.getStack().GetRegAddr(19);
-            this->f.getStack().gencode_spillout(f, offset, 19);
+            auto offset = this->f->getStack().GetRegAddr(19);
+            this->f->getStack().gencode_spillout(f, offset, 19);
             return "";
         }
 };
@@ -215,7 +223,7 @@ class Iassign : public Intrin
         res::EeyoreVariable *lvar;
         res::RVariable *rvar;
     public:
-        Iassign(const std::vector<std::string> &vec, int lineno, Function &m)
+        Iassign(const std::vector<std::string> &vec, int lineno, Function *m)
             : Intrin(lineno, m)
         {
             rvar = res::RVariable::GenRvar(vec[2]);
@@ -231,20 +239,20 @@ class Iassign : public Intrin
 
         virtual std::string gencode(FILE *f) const override
         {
-            auto lreg = this->f.getReg(f, lvar, lineno);
+            auto lreg = this->f->getReg(f, lvar, lineno);
             std::string rreg;
             /* OPTIMIZATION FOR CONSTANT, do not use reg */
             if(INSTANCE_OF(rvar, res::ImmediateVal))
                 rreg = rvar->getName();
             else
-                rreg = this->f.getReg(f, rvar, getPrevLineno());
+                rreg = this->f->getReg(f, rvar, getPrevLineno());
 
             if(lreg != rreg)
                 Emit(f, lreg + " = " + rreg + " // Iassign\n");
             if(lreg[0] == 't' || res::globalVars.isGlobalVar(lvar)) // temp reg
             {
                 res::RegPool temp;
-                this->f.BackToMemory(f, lvar, temp.getRID(lreg));
+                this->f->BackToMemory(f, lvar, temp.getRID(lreg));
             }
             return "";
         }
@@ -256,7 +264,7 @@ class Iarrdec : public Intrin
         res::EeyoreVariable *var;
         int len;
     public:
-        Iarrdec(std::vector<std::string> &name, int lineno, Function &m)
+        Iarrdec(std::vector<std::string> &name, int lineno, Function *m)
             : Intrin(lineno, m)
         {
             var = res::EeyoreVariable::GenRvar(name[2]);
@@ -281,7 +289,7 @@ class Icallfunc : public Intrin
         std::string fname;
         res::EeyoreVariable *lvar;
     public:
-        Icallfunc(std::vector<std::string> &vec, int lineno, Function &m)
+        Icallfunc(std::vector<std::string> &vec, int lineno, Function *m)
             : Intrin(lineno, m), fname(vec[3])
         {
             lvar = res::EeyoreVariable::GenRvar(vec[0]);
@@ -293,14 +301,14 @@ class Icallfunc : public Intrin
 
         virtual std::string gencode(FILE *f) const override
         {
-            this->f.PrepareCalling(f, fname);
+            this->f->PrepareCalling(f, fname);
             fprintf(f, "call %s\n", fname.c_str());
-            auto lreg = this->f.getReg(f, lvar, lineno);
-            this->f.EndCalling(f, fname);
+            auto lreg = this->f->getReg(f, lvar, lineno);
+            this->f->EndCalling(f, fname);
             Emit(f, lreg + " = a0 // Icallfunc\n");
             /* restore a0:19 */
-            auto offset = this->f.getStack().GetRegAddr(19);
-            this->f.getStack().gencode_spillout(f, offset, 19);
+            auto offset = this->f->getStack().GetRegAddr(19);
+            this->f->getStack().gencode_spillout(f, offset, 19);
             return "";
         }
 
@@ -322,7 +330,7 @@ class Iunaryexpr : public Intrin
         std::string op;
         res::RVariable *rvar;
     public:
-        Iunaryexpr(std::vector<std::string> &vec, int lineno, Function &m)
+        Iunaryexpr(std::vector<std::string> &vec, int lineno, Function *m)
             : Intrin(lineno, m)
         {
             lvar = res::EeyoreVariable::GenRvar(vec[0]);
@@ -338,14 +346,14 @@ class Iunaryexpr : public Intrin
         virtual std::string gencode(FILE *f) const override
         {
 
-            auto lreg = this->f.getReg(f, lvar, lineno);
+            auto lreg = this->f->getReg(f, lvar, lineno);
             std::string rreg;
-            rreg = this->f.getReg(f, rvar, getPrevLineno());
+            rreg = this->f->getReg(f, rvar, getPrevLineno());
             Emit(f, lreg + " = " + op + " " + rreg + " // Iunaryexpr\n");
             if(lreg[0] == 't' || res::globalVars.isGlobalVar(lvar))
             {
                 res::RegPool pool;
-                this->f.BackToMemory(f, lvar, pool.getRID(lreg));
+                this->f->BackToMemory(f, lvar, pool.getRID(lreg));
             }
             return "";
         }
@@ -359,7 +367,7 @@ class Iaassv : public Intrin
         res::RVariable *offset;
         res::RightVariable *rvar;
     public:
-        Iaassv(std::vector<std::string> &vec, int lineno, Function &m)
+        Iaassv(std::vector<std::string> &vec, int lineno, Function *m)
             : Intrin(lineno, m)
         {
             lvar = res::EeyoreVariable::GenRvar(vec[0]);
@@ -381,11 +389,11 @@ class Iaassv : public Intrin
         virtual std::string gencode(FILE *f) const override
         {
             /* TODO: use resmgr to get 1 or 2 reg */
-            auto lreg = this->f.getReg(f, lvar, lineno),
-                 rreg = this->f.getReg(f, rvar, getPrevLineno()),
-                 oreg = this->f.getReg(f, offset, getPrevLineno());
+            auto lreg = this->f->getReg(f, lvar, lineno),
+                 rreg = this->f->getReg(f, rvar, getPrevLineno()),
+                 oreg = this->f->getReg(f, offset, getPrevLineno());
             res::RegPool pool;
-            this->f.BackToMemory(f, lvar, pool.getRID(rreg), pool.getRID(oreg));
+            this->f->BackToMemory(f, lvar, pool.getRID(rreg), pool.getRID(oreg));
             Emit(f, "       // ^ Iaassv\n");
             return "";
         }
@@ -400,7 +408,7 @@ class Ivassa : public Intrin
         res::RVariable *offset;
         res::EeyoreVariable *rvar;
     public:
-        Ivassa(std::vector<std::string> &vec, int lineno, Function &m)
+        Ivassa(std::vector<std::string> &vec, int lineno, Function *m)
             : Intrin(lineno, m)
         {
             lvar = res::EeyoreVariable::GenRvar(vec[0]);
@@ -419,16 +427,16 @@ class Ivassa : public Intrin
         
         virtual std::string gencode(FILE *f) const override
         {
-            auto lreg = this->f.getReg(f, lvar, lineno),
-                 rreg = this->f.getReg(f, rvar, getPrevLineno()),
-                 oreg = this->f.getReg(f, offset, getPrevLineno());
+            auto lreg = this->f->getReg(f, lvar, lineno),
+                 rreg = this->f->getReg(f, rvar, getPrevLineno()),
+                 oreg = this->f->getReg(f, offset, getPrevLineno());
             /* load the address into t6 */
             Emit(f, lreg + " = " + rreg + " + " + oreg + " // Ivassa\n");
             Emit(f, lreg + " = " + lreg + " [0] " + " // Ivassa\n");
             if(lreg[0] == 't' || res::globalVars.isGlobalVar(lvar))
             {
                 res::RegPool pool;
-                this->f.BackToMemory(f, lvar, pool.getRID(lreg));
+                this->f->BackToMemory(f, lvar, pool.getRID(lreg));
             }
             return "";
         }
@@ -446,7 +454,7 @@ class Ibinexpr : public Intrin
         res::RVariable *rvar1, *rvar2;
         std::string op;
     public:
-        Ibinexpr(std::vector<std::string> &vec, int lineno, Function &m)
+        Ibinexpr(std::vector<std::string> &vec, int lineno, Function *m)
             : Intrin(lineno, m)
         {
             lvar = res::EeyoreVariable::GenRvar(vec[0]);
@@ -465,7 +473,7 @@ class Ibinexpr : public Intrin
 
         virtual std::string gencode(FILE *f) const override
         {
-            auto lreg = this->f.getReg(f, lvar, this->lineno);
+            auto lreg = this->f->getReg(f, lvar, this->lineno);
             std::string r1, r2;
             if(INSTANCE_OF(rvar1, res::ImmediateVal))
             {
@@ -494,15 +502,15 @@ class Ibinexpr : public Intrin
                     goto BACK;
                 }
             }
-            r1 = this->f.getReg(f, rvar1, this->getPrevLineno());
-            r2 = this->f.getReg(f, rvar2, this->getPrevLineno());
+            r1 = this->f->getReg(f, rvar1, this->getPrevLineno());
+            r2 = this->f->getReg(f, rvar2, this->getPrevLineno());
             Emit(f, lreg + " = " + r1 + " " + this->op + " " + 
                     r2 + " // Ibinexpr\n");
 BACK:
             if(lreg[0] == 't' || res::globalVars.isGlobalVar(lvar))
             {
                 res::RegPool pool;
-                this->f.BackToMemory(f, lvar, pool.getRID(lreg));
+                this->f->BackToMemory(f, lvar, pool.getRID(lreg));
             }
             return "";
         }
@@ -516,7 +524,7 @@ class Icjmp : public Intrin
         std::string op;
         std::string label;
     public:
-        Icjmp(std::vector<std::string> &vec, int lineno, Function &m)
+        Icjmp(std::vector<std::string> &vec, int lineno, Function *m)
             : Intrin(lineno, m)
         {
             rvar1 = res::RVariable::GenRvar(vec[1]);
@@ -534,8 +542,8 @@ class Icjmp : public Intrin
 
         virtual std::string gencode(FILE *f) const override
         {
-            auto reg1 = this->f.getReg(f, rvar1, this->getPrevLineno());
-            auto reg2 = this->f.getReg(f, rvar2, this->getPrevLineno());
+            auto reg1 = this->f->getReg(f, rvar1, this->getPrevLineno());
+            auto reg2 = this->f->getReg(f, rvar2, this->getPrevLineno());
             Emit(f, "if " + reg1 + " " + op + " " + reg2 + " goto " + 
                     label +  " // Icjmp\n");
             return "";
@@ -598,10 +606,11 @@ void Function::InitRes(res::Liveness &liveness)
     /* CODE ANALYSIS from liveness */
     /* REG ALLOCATION */
     pallocer = new res::RegAllocer(liveness, this->stk);
-    allocresult = pallocer->Alloc();
+    this->allocresult = pallocer->Alloc();
     this->usedReg = pallocer->GetUsedRegs();
-    if(global_debug_flag)
+    //if(global_debug_flag)
     {
+        global_debug_flag = 1;
         std::cerr<<"Liveness result:========================== "<<std::endl;
         for(auto ent : liveness)
         {
@@ -631,6 +640,7 @@ void Function::InitRes(res::Liveness &liveness)
             }
             std::cerr<<std::endl;
         }
+        global_debug_flag = 0;
     }
 }
 
@@ -675,13 +685,20 @@ void Function::gencode(FILE *f)//, res::Liveness &liveness)
     }
 }
 
+/**
+ * return NULL if no prev intrin is found
+ * This situation is rare, it will only happen when some initializing code
+ * from global scope has been transferred to f_main
+ */
 Intrin *Function::getPrevIntrin(const Intrin *in)
 {
     if(this->intrins.count(in->getline()) == 0)
         throw std::runtime_error("The intrin of line: "
                + std::to_string(in->getline()) + " is not in this function");
     auto it = this->intrins.find(in->getline());
-    it--;
+    if(it == this->intrins.begin())
+        return NULL;
+    else --it;
     return it->second;
 }
 
@@ -704,7 +721,8 @@ std::string Function::getReg(FILE *f, res::RightVariable *rvar, int lineno)
     std::string ret;
     res::EeyoreVariable *evar = (res::EeyoreVariable*)rvar;
     auto &ares = this->allocresult[lineno];
-    auto &pres = this->allocresult[intrins[lineno]->getPrevLineno()];
+
+    //auto &pres = this->allocresult[intrins[lineno]->getPrevLineno()];
     res::VarInfo info {evar, -2};
     if(ares.count(info) == 0)
         throw std::runtime_error("Variable " + evar->getName() 
@@ -1057,8 +1075,15 @@ void IntrinManager::gencode(FILE *f)
             Iarrdec *vin = (Iarrdec *)in;
             res::globalVars.AllocGlobalArr(f, vin->var, vin->len);
         }
-        else throw std::runtime_error("Invalid intrin in f__init!");
-        /* TODO: move these intrin into f_main may be a good choice? */
+        else
+        {
+            //throw std::runtime_error("Invalid intrin in f__init!");
+            /* TODO: move these intrin into f_main may be a good choice? */
+            auto fmain = this->getfunc("f_main");
+            fmain->AddIntrin(in);
+            in->TransferFunction(fmain);
+        }
+
     }
     this->funcs.erase(GLOBAL_SCOPE_NAME);
 
@@ -1117,8 +1142,8 @@ Liveness LivenessAnalysis(IntrinManager &m, const std::string &funcname)
     };
 
     Liveness ret;
-    auto &function = m.getfunc(funcname);
-    auto &func = function.getIntrins();
+    auto *function = m.getfunc(funcname);
+    auto &func = function->getIntrins();
     /* initialize graph */
     std::map<int, IntrinNode> graph;
     for(auto ent : func)

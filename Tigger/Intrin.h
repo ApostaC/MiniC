@@ -63,10 +63,10 @@ class Intrin
         std::string code;
         std::set<res::EeyoreVariable> def;
         std::set<res::EeyoreVariable> use;
-        Function &f;
+        Function *f;
 
     public:
-        Intrin(int line, Function &m) : lineno(line), f(m) {}
+        Intrin(int line, Function *m) : lineno(line), f(m) {}
         virtual int getline() const {return lineno;}
         virtual std::set<res::EeyoreVariable> &getdef(){return def;}
         virtual std::set<res::EeyoreVariable> &getuse(){return use;}
@@ -77,6 +77,7 @@ class Intrin
         virtual void setcode(const std::string &c)
         {this->code = c;}
         virtual std::string getcode() { return code;}
+        virtual void TransferFunction(Function *newf){f=newf;}
 };
 
 class Function
@@ -196,10 +197,10 @@ class IntrinManager
             for(auto func : this->funcs) ret.push_back(func.first);
             return ret;
         }
-        Function &getfunc(const std::string &f) { 
+        Function *getfunc(const std::string &f) { 
             if(this->funcs.count(f) == 0)
                 throw std::runtime_error("No such function");
-            return *this->funcs[f]; 
+            return this->funcs[f]; 
         }
 };
 
