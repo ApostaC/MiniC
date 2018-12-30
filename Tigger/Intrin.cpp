@@ -93,6 +93,14 @@ class Ivardef : public Intrin
         DBP_FUNC{
             DBG_PRINT("Ivardef: " + var->getName());
         }
+        bool isEeyoreGlobal()
+        {
+            auto name = var->getName();
+            // TODO: hard code here!
+            // Not good!
+            if(name[0] == 'T') return true;
+            return false;
+        }
 };
 
 class Iendfun : public Intrin
@@ -1063,7 +1071,8 @@ void IntrinManager::gencode(FILE *f)
         if(INSTANCE_OF(in, Ivardef))
         {
             Ivardef *vin = (Ivardef *)in;
-            res::globalVars.AllocGlobalVar(f, vin->var, 0);
+            if(vin->isEeyoreGlobal())
+                res::globalVars.AllocGlobalVar(f, vin->var, 0);
         }
         else if(INSTANCE_OF(in, Iarrdec))
         {
