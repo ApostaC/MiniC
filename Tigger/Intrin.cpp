@@ -608,9 +608,8 @@ void Function::InitRes(res::Liveness &liveness)
     pallocer = new res::RegAllocer(liveness, this->stk);
     this->allocresult = pallocer->Alloc();
     this->usedReg = pallocer->GetUsedRegs();
-    //if(global_debug_flag)
+    if(global_debug_flag)
     {
-        global_debug_flag = 1;
         std::cerr<<"Liveness result:========================== "<<std::endl;
         for(auto ent : liveness)
         {
@@ -640,7 +639,6 @@ void Function::InitRes(res::Liveness &liveness)
             }
             std::cerr<<std::endl;
         }
-        global_debug_flag = 0;
     }
 }
 
@@ -1103,15 +1101,16 @@ void IntrinManager::gencode(FILE *f)
         funcent.second->InitRes(liveness);
 
         /* debug! */
+        if(global_debug_flag)
         {
             std::cerr<<"After Optimize: "<<std::endl;
-            global_debug_flag = 1;
+            //global_debug_flag = 1;
             for(auto in : funcent.second->getIntrins())
             {
                 std::cerr<<"Line: "<<in.first<<": "<<in.second->getcode()<<" -- ";
                 in.second->dbg_print();
             }
-            global_debug_flag = 0;
+            //global_debug_flag = 0;
         }
 
         funcent.second->gencode(f);
