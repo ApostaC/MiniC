@@ -1,3 +1,5 @@
+TARGET = bin/eeyore bin/tigger bin/riscv64
+
 all: bin/eeyore bin/tigger bin/riscv64
 
 bin/eeyore: Eeyore/Makefile
@@ -18,3 +20,4 @@ clean:
 	- (cd Eeyore; make clean)
 	- (cd Tigger; make clean)
 	- (cd RISCV; make clean)
+	- rm -f ${TARGET}
