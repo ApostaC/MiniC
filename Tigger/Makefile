@@ -5,7 +5,7 @@ FLAGS = -std=c++14 -g -Ofast
 
 tigger: ${OBJ} #Tigger.tab.cpp lex.yy.cpp
 	g++ $^ -o $@ -lfl ${FLAGS}
-	cp tigger test/tigger
+	#cp tigger test/tigger
 
 %.o: %.cpp %.h
 	g++ -c $^ ${FLAGS}

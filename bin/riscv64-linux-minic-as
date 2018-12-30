@@ -7,6 +7,6 @@ fi
 fin=${1##*/}
 prefix=${fin%%.*}
 
-cat $1 | ./eeyore | ./tigger 2>/dev/null | ./riscv64 2>/dev/null 1>${prefix}.S
+cat $1 | ./eeyore | tee ${prefix}.e | ./tigger 2>/dev/null | tee ${prefix}.tig | ./riscv64 2>/dev/null 1>${prefix}.S
 
 echo "Complie finished! Code generated to ${prefix}.S"
