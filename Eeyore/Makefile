@@ -1,12 +1,14 @@
 
 OBJ = Symbols.o Express.o Statement.o
 
+FLAGS = -std=c++14 -lfl -g -Ofast
+
 eeyore: ${OBJ} Eeyore.tab.cpp lex.yy.cpp common.h Eeyore.cpp
-	g++ $^ -o $@ -lfl -std=c++14 -g
+	g++ $^ -o $@ ${FLAG} # -lfl -std=c++14 -g
 	# cp eeyore test/
 
 %.o: %.cpp %.h
-	g++ -c $^ -std=c++14 -g
+	g++ -c $^ ${FLAGS} #-std=c++14 -g
 
 Eeyore.tab.cpp: Eeyore.y
 	bison -d Eeyore.y -o Eeyore.tab.cpp
