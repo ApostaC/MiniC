@@ -1,6 +1,0 @@
-Functionalities
-    @see TODO.ext
-Implementations
-    lexical analysis
-    syntax analysis
-    code framework
