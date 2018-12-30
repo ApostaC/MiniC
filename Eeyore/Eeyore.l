@@ -35,7 +35,10 @@ NUM [1-9][0-9]*|0
  /* Reserved Words */
 int                     {yylval.type = Expr_Type::INT_TYPE; return TOKINT;}
 void                    {yylval.type = Expr_Type::VOID_TYPE; return TOKVOID;}
+ /*
 bool                    {yylval.type = Expr_Type::BOOL_TYPE; return TOKBOOL;}
+*/
+bool                    {char buf[100] = "Unsupported type: bool"; yyerror(buf);}
 
 if                      {return IF;}
 else                    {return ELSE;}
