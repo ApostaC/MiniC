@@ -69,6 +69,7 @@ bool IfStmt::retCheck(Expr_Type ext)
     }
     for(auto s : check)
         if(s) ret = ret & s->retCheck(ext);
+        else return false; // if only one branch, we assume it will never be taken
     return ret;
 }
 
@@ -116,7 +117,22 @@ bool CompoundStmt::retCheck(Expr_Type ext)
 
 bool FuncBodyStmt::retCheck(Expr_Type ext)
 {
-    return CompoundStmt::retCheck(ext);
+    auto ret = CompoundStmt::retCheck(ext);
+    if(ret == false)
+    {
+        if(ext == VOID_TYPE)
+        {
+            EmitWarning("Return with a value, in function returning void");
+            emit_note("return sentence here", this->lineno); 
+        }
+        else
+        {
+            EmitWarning("Return with no value, in function returning non-void");
+            emit_note("return sentence here", this->lineno);
+        }
+
+    }
+    return ret;
 }
 
 /* ------------------------- gencode ------------------------- */
@@ -204,7 +220,7 @@ void ArrdefnStmt::gencode(FILE *f) const
     /* then treat as a lot of assign expr */   
     ArrdeclStmt::gencode(f);
     /* Do length check */
-    
+
     auto size = std::min(init->size(), arr->getLength());
     for(size_t i = 0; i < size; ++i)
     {
@@ -212,5 +228,5 @@ void ArrdefnStmt::gencode(FILE *f) const
         ArrayExpr ae(arr, &off, table);
         AssignExpr(&ae, init->at(i), this->table).gencode(f);
     }
-                
+
 }
